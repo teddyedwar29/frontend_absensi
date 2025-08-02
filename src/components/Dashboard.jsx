@@ -42,11 +42,11 @@ const Dashboard = () => {
   };
 
   const recentActivity = [
-    { id: 1, name: "Ahmad Rizki", action: "Check In", time: "08:15", location: "Jakarta Pusat", status: "ontime" },
-    { id: 2, name: "Sari Dewi", action: "Check Out", time: "17:30", location: "Bandung", status: "ontime" },
-    { id: 3, name: "Budi Santoso", action: "Check In", time: "08:45", location: "Surabaya", status: "late" },
-    { id: 4, name: "Maya Putri", action: "Check In", time: "08:10", location: "Yogyakarta", status: "ontime" },
-    { id: 5, name: "Doni Pratama", action: "Absent", time: "-", location: "-", status: "absent" }
+    { id: 1, name: "Ahmad Rizki", action: "terinput", time: "08:15", location: "Jakarta Pusat", status: "ontime" },
+    { id: 2, name: "Sari Dewi", action: "terinput", time: "17:30", location: "Bandung", status: "ontime" },
+    { id: 3, name: "fauzi", action: "terinput", time: "08:45", location: "Surabaya", status: "late" },
+    { id: 4, name: "teddy ajo", action: "terinput", time: "08:10", location: "Yogyakarta", status: "ontime" },
+    { id: 5, name: "aqil ganteng", action: "terinput", time: "-", location: "-", status: "absent" }
   ];
 
   const topPerformers = [
@@ -142,7 +142,7 @@ const Dashboard = () => {
                 <Menu size={24} />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+                <h1 className="text-2xl font-bold text-gray-800">Dashboard sales</h1>
                 <p className="text-gray-600">Selamat datang kembali, Manager!</p>
               </div>
             </div>
@@ -217,7 +217,7 @@ const Dashboard = () => {
               </div>
               <div className="mt-3 sm:mt-4">
                 <div className="flex items-center text-xs sm:text-sm">
-                  <span className="text-yellow-600 font-medium">+3%</span>
+                  <span className="text-yellow-600 font-medium">+10%</span>
                   <span className="text-gray-600 ml-2 truncate">dari periode sebelumnya</span>
                 </div>
               </div>
