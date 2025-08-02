@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Users, TrendingUp, MapPin, Bell, Settings, LogOut, Menu, X, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { logout } from '../api/auth';
+import { logout } from '../../api/auth';
 
 const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
