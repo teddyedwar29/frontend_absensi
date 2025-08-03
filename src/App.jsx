@@ -1,31 +1,39 @@
+// src/App.jsx
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import AbsensiPage from './pages/Sales/Absensi.jsx'; 
+import AdminTeamPage from './pages/Admin/TimSales.jsx';
 
-// 1. Impor semua halaman dan komponen yang dibutuhkan
+// Impor semua halaman dan komponen yang dibutuhkan
 import LoginPage from './pages/LoginPage.jsx';
-import AdminDashboard from './pages/Admin/Dashboard.jsx'; // Dashboard untuk Admin/Manager
-import SalesDashboard from './pages/Sales/Dashboard.jsx'; // Dashboard untuk Sales
+import DashboardAdmin from './pages/Admin/Dashboard.jsx';
+import DashboardSales from './pages/Sales/Dashboard.jsx';
+import AbsensiPage from './pages/Sales/Absensi.jsx';
+import NotFoundPage from './pages/NotFoundPage.jsx'; // Nanti kita buat file ini
+
+// Impor ProtectedRoute yang lebih canggih untuk role-based access
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
-// 2. Impor fungsi-fungsi penting dari auth.js
-import { isAuthenticated, getUserRole, logout } from './api/auth.js';
+// Impor fungsi autentikasi
+import { isAuthenticated, getUserRole } from './api/auth.js';
 
-// Komponen kecil untuk mengarahkan berdasarkan role
+/**
+ * DashboardDispatcher
+ * Komponen ini berfungsi sebagai 'gerbang' utama setelah login.
+ * Tugasnya adalah memeriksa role pengguna dan mengarahkan ke dashboard yang sesuai.
+ */
 const DashboardDispatcher = () => {
   const role = getUserRole();
 
-  // PENTING: Sesuaikan 'manager' dan 'sales' dengan nama role dari backend Anda
   if (role === 'admin') {
-    return <Navigate to="/admin/dashboard" />;
+    return <Navigate to="/admin" />;
   }
   
   if (role === 'sales') {
-    return <Navigate to="/sales/dashboard" />;
+    return <Navigate to="/sales" />;
   }
 
-  // Jika role tidak dikenali, kembalikan ke login untuk mencegah error
-  // Ini juga akan menangani logout, karena role akan menjadi null
+  // Jika tidak ada role atau role tidak dikenal, kembalikan ke login
   return <Navigate to="/" />; 
 };
 
@@ -33,62 +41,75 @@ const DashboardDispatcher = () => {
 function App() {
   return (
     <Router>
-      <div className="App">
-        <Routes>
-          {/* Rute Halaman Login */}
-          <Route 
-            path="/" 
-            element={
-              // Jika sudah login, langsung lempar ke "gerbang" dashboard
-              isAuthenticated() ? <Navigate to="/dashboard" /> : <LoginPage />
-            } 
-          />
-          
-          {/* Rute "Gerbang" atau Pengecekan Role */}
-          {/* Rute ini hanya bisa diakses jika sudah login */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <DashboardDispatcher />
-              </ProtectedRoute>
-            } 
-          />
+      <Routes>
+        {/* Rute Halaman Login */}
+        {/* Jika user sudah login, langsung alihkan ke "gerbang" dashboard */}
+        <Route 
+          path="/" 
+          element={
+            isAuthenticated() ? <DashboardDispatcher /> : <LoginPage />
+          } 
+        />
 
-          {/* Rute Spesifik untuk Admin */}
-          <Route 
-            path="/admin/dashboard" 
-            element={
-              // ProtectedRoute akan mengecek token DAN role 'manager'
-              <ProtectedRoute role="admin">
-                <AdminDashboard onLogout={logout} />
-              </ProtectedRoute>
-            } 
-          />
+        {/* --- Rute yang Dilindungi (Protected Routes) --- */}
 
-          {/* Rute Spesifik untuk Sales */}
-          <Route 
-            path="/sales/dashboard" 
-            element={
-              // ProtectedRoute akan mengecek token DAN role 'sales'
-              <ProtectedRoute role="sales">
-                <SalesDashboard onLogout={logout} />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/sales/absensi" 
-            element={
-              <ProtectedRoute role="sales">
-                <AbsensiPage />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Catch all route - redirect ke gerbang utama jika sudah login, atau ke login jika belum */}
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </div>
+        {/* Gerbang Utama: Meneruskan user ke dashboard yang sesuai berdasarkan role */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <DashboardDispatcher />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Rute untuk Admin */}
+        <Route 
+          path="/admin/dashboard" 
+          element={
+            // ProtectedRoute kini memeriksa token DAN role yang diperlukan
+            <ProtectedRoute requiredRole="admin">
+              <DashboardAdmin />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Rute baru untuk Tim Sales (khusus Admin) */}
+        <Route
+          path="/admin/teams"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminTeamPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Rute untuk Sales */}
+        <Route 
+          path="/sales" 
+          element={
+            // ProtectedRoute kini memeriksa token DAN role yang diperlukan
+            <ProtectedRoute requiredRole="sales">
+              <DashboardSales />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Rute Halaman Absensi untuk Sales */}
+        <Route 
+          path="/absensi" 
+          element={
+            <ProtectedRoute requiredRole="sales">
+              <AbsensiPage />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Rute lain bisa ditambahkan di sini, misalnya halaman untuk Tim Sales atau Kunjungan */}
+        
+        {/* Catch-all Route: Menampilkan halaman 404 Not Found untuk rute yang tidak ada */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
     </Router>
   );
 }
