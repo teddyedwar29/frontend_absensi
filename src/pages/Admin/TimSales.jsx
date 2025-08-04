@@ -12,6 +12,28 @@ const AdminTimSales = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newSales, setNewSales] = useState({
+    name: '',
+    username: '', // tambahkan username
+    email: '',
+    telpon: '',
+    lokasi: '',
+  });
+
+// Add token to requests if available
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
   // Menggunakan useEffect untuk memuat data dari API saat komponen dimuat
   useEffect(() => {
@@ -25,9 +47,12 @@ const AdminTimSales = () => {
 
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:5050/admin/get-users');
-        const salesData = response.data.filter(user => user.role === 'admin');
-        setSalesTeam(salesData);
+        const response = await axios.get('http://localhost:5000/admin/get-users');
+        console.log("API response:", response.data); // Tambahkan ini untuk debug
+
+        // Jika response.data adalah array langsung:
+        setSalesTeam(Array.isArray(response.data) ? response.data : response.data.data);
+
         setError(null);
       } catch (err) {
         console.error("Gagal mengambil data tim sales:", err);
@@ -53,6 +78,39 @@ const AdminTimSales = () => {
                           (sales.lokasi && sales.lokasi.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesSearch;
   });
+
+  const handleAddSales = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem("token");
+    console.log("Token yang dipakai:", token); // Debug token
+    try {
+      const response = await axios.post('http://localhost:5000/register', {
+        name: newSales.name,
+        username: newSales.username,
+        email: newSales.email,
+        telpon: newSales.telpon,
+        lokasi: newSales.lokasi,
+        role: 'sales',
+        password: 'default123',
+      });
+
+      setSalesTeam([...salesTeam, response.data.data || response.data]);
+      setShowAddModal(false);
+      setNewSales({ name: '', username: '', email: '', telpon: '', lokasi: '' });
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Berhasil',
+        text: 'Sales berhasil ditambahkan!',
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal',
+        text: error.response?.data?.message || 'Gagal menambah sales.',
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -80,11 +138,75 @@ const AdminTimSales = () => {
       {/* Header Halaman */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Daftar Tim Sales</h2>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+        <button
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          onClick={() => setShowAddModal(true)}
+        >
           <Plus size={20} />
           Tambah Sales
         </button>
       </div>
+
+      {/* Modal Tambah Sales */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 w-full max-w-md shadow-lg relative">
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+              onClick={() => setShowAddModal(false)}
+            >
+              <XCircle size={24} />
+            </button>
+            <h3 className="text-xl font-bold mb-4">Tambah Sales Baru</h3>
+            <form onSubmit={handleAddSales} className="space-y-4">
+              <input
+                type="text"
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Nama"
+                value={newSales.name}
+                onChange={e => setNewSales({ ...newSales, name: e.target.value })}
+                required
+              />
+              <input
+                type="text"
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="id_mr"
+                value={newSales.username}
+                onChange={e => setNewSales({ ...newSales, username: e.target.value })}
+                required
+              />
+              <input
+                type="email"
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Email"
+                value={newSales.email}
+                onChange={e => setNewSales({ ...newSales, email: e.target.value })}
+                required
+              />
+              <input
+                type="text"
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Telepon"
+                value={newSales.telpon}
+                onChange={e => setNewSales({ ...newSales, telpon: e.target.value })}
+              />
+              <input
+                type="text"
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Lokasi"
+                value={newSales.lokasi}
+                onChange={e => setNewSales({ ...newSales, lokasi: e.target.value })}
+              />
+              <button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold"
+              >
+                Simpan
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Pencarian */}
       <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
@@ -116,6 +238,8 @@ const AdminTimSales = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">{sales.name}</h3>
+                      {/* Tampilkan username di bawah nama */}
+                      <p className="text-sm text-gray-500">{sales.username || '-'}</p>
                       <p className="text-sm text-gray-600">{sales.role}</p>
                     </div>
                   </div>
