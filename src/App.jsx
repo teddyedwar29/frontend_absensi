@@ -10,6 +10,9 @@ import DashboardAdmin from './pages/Admin/Dashboard.jsx';
 import DashboardSales from './pages/Sales/Dashboard.jsx';
 import AbsensiPage from './pages/Sales/Absensi.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx'; // Nanti kita buat file ini
+import TrackingPage from "./pages/Admin/TrackingPage";
+import { isAuthenticated } from './api/auth';
+
 
 // Impor ProtectedRoute yang lebih canggih untuk role-based access
 import ProtectedRoute from './components/ProtectedRoute.jsx';
@@ -104,6 +107,8 @@ function App() {
             </ProtectedRoute>
           } 
         />
+         {/* DAFTARKAN RUTE BARU DI SINI */}
+        <Route path="/admin/tracking/:username" element={<PrivateRoute><TrackingPage /></PrivateRoute>} />
         
         {/* Rute lain bisa ditambahkan di sini, misalnya halaman untuk Tim Sales atau Kunjungan */}
         
