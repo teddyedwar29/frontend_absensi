@@ -126,7 +126,7 @@ const AdminTimSales = () => {
           <Plus size={20} /> Tambah Sales
         </button>
       </div>
-
+    
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-8 w-full max-w-md shadow-lg relative">
@@ -141,7 +141,7 @@ const AdminTimSales = () => {
               <input type="text" className="w-full border rounded-lg px-3 py-2" placeholder="Nama Lengkap" value={newSales.name} onChange={e => setNewSales({ ...newSales, name: e.target.value })} required />
               <input type="text" className="w-full border rounded-lg px-3 py-2" placeholder="Username (ID MR)" value={newSales.username} onChange={e => setNewSales({ ...newSales, username: e.target.value })} required />
               <input type="email" className="w-full border rounded-lg px-3 py-2" placeholder="Email" value={newSales.email} onChange={e => setNewSales({ ...newSales, email: e.target.value })} required />
-              <input type="text" className="w-full border rounded-lg px-3 py-2" placeholder="Nomor Telepon" value={newSales.phone_number} onChange={e => setNewSales({ ...newSales, phone_number: e.target.value })} />
+              <input type="text" className="w-full border rounded-lg px-3 py-2" placeholder="Nomor Telepon" value={newSales.telpon} onChange={e => setNewSales({ ...newSales, telpon: e.target.value })} />
               <input type="text" className="w-full border rounded-lg px-3 py-2" placeholder="Lokasi" value={newSales.lokasi} onChange={e => setNewSales({ ...newSales, lokasi: e.target.value })} />
               <input type="password" className="w-full border rounded-lg px-3 py-2" placeholder="Password Awal" value={newSales.password} onChange={e => setNewSales({ ...newSales, password: e.target.value })} required />
               <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold">Simpan</button>
@@ -173,7 +173,7 @@ const AdminTimSales = () => {
                 </div>
                 <div className="space-y-2 text-sm text-gray-600">
                   <div className="flex items-center gap-2"><Map size={14} /><span>{sales.lokasi || 'Tidak Ada Lokasi'}</span></div>
-                  <div className="flex items-center gap-2"><Phone size={14} /><span>{sales.phone_number || 'Tidak Ada Telepon'}</span></div>
+                  <div className="flex items-center gap-2"><Phone size={14} /><span>{sales.telpon || 'Tidak Ada Telepon'}</span></div>
                   <div className="flex items-center gap-2"><Mail size={14} /><span>{sales.email || 'Tidak Ada Email'}</span></div>
                 </div>
               </div>

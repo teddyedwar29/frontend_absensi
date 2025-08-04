@@ -84,7 +84,7 @@ const TrackingPage = () => {
   return (
     <DashboardLayout>
       <div className="flex items-center mb-4">
-        <Link to="/admin/tim-sales" className="text-blue-600 hover:underline flex items-center gap-2">
+        <Link to="/admin/teams" className="text-blue-600 hover:underline flex items-center gap-2">
             <ArrowLeft size={20}/>
             Kembali ke Tim Sales
         </Link>
