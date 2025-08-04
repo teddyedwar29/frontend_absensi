@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { Search, Plus, MoreVertical, MapPin, Phone, Mail, XCircle } from 'lucide-react';
+import { Search, Plus, MoreVertical, Map, Phone, Mail, XCircle } from 'lucide-react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { isAuthenticated, getUserRole } from '../../api/auth';
 import { Link } from 'react-router-dom';
-import { Map, Phone, Mail, MoreVertical } from 'lucide-react'; // Ganti MapPin dengan Map
 
 // Pindahkan instance Axios ke sini agar bisa digunakan di semua fungsi
 const API = axios.create({
@@ -173,7 +172,7 @@ const AdminTimSales = () => {
                   </div>
                 </div>
                 <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center gap-2"><MapPin size={14} /><span>{sales.lokasi || 'Tidak Ada Lokasi'}</span></div>
+                  <div className="flex items-center gap-2"><Map size={14} /><span>{sales.lokasi || 'Tidak Ada Lokasi'}</span></div>
                   <div className="flex items-center gap-2"><Phone size={14} /><span>{sales.phone_number || 'Tidak Ada Telepon'}</span></div>
                   <div className="flex items-center gap-2"><Mail size={14} /><span>{sales.email || 'Tidak Ada Email'}</span></div>
                 </div>

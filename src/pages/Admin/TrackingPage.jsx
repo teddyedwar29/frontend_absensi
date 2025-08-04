@@ -6,13 +6,19 @@ import L from 'leaflet';
 import DashboardLayout from '../../components/DashboardLayout';
 import API from '../../api/auth'; // Impor instance Axios Anda
 import { ArrowLeft } from 'lucide-react';
+// 👇👇 TAMBAHKAN 3 BARIS INI 👇👇
+import iconMarker2x from 'leaflet/dist/images/marker-icon-2x.png';
+import iconMarker from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import RoutingMachine from '../../components/RoutingMachine'; // <-- 1. Impor komponen baru
+
 
 // Fix untuk ikon marker yang tidak muncul di React
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-  iconUrl: require('leaflet/dist/images/marker-icon.png'),
-  shadowUrl: require('leaflet/dist/images/shadow.png'),
+    iconRetinaUrl: iconMarker2x,
+    iconUrl: iconMarker,
+    shadowUrl: iconShadow,
 });
 
 // Fungsi untuk mendapatkan tanggal hari ini dalam format YYYY-MM-DD
@@ -31,6 +37,7 @@ const TrackingPage = () => {
   const [mapCenter, setMapCenter] = useState([-0.947083, 100.352222]); // Default: Padang
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const waypointPositions = routeData.map(point => point.position);
 
   useEffect(() => {
     const fetchTrackingData = async () => {
@@ -115,9 +122,9 @@ const TrackingPage = () => {
                     </Popup>
                     </Marker>
                 ))}
-                {polylinePositions.length > 1 && (
-                    <Polyline pathOptions={{ color: 'blue' }} positions={polylinePositions} />
-                )}
+                 {waypointPositions.length > 1 && (
+                <RoutingMachine waypoints={waypointPositions} />
+              )}
             </MapContainer>
         )}
       </div>

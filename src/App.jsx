@@ -73,7 +73,14 @@ function App() {
             </ProtectedRoute>
           } 
         />
-
+          {/* DAFTARKAN RUTE BARU DI SINI */}
+              <Route 
+              path="/admin/tracking/:username" 
+              element={
+              <ProtectedRoute>
+              <TrackingPage />
+              </ProtectedRoute>
+            } />
         {/* Rute baru untuk Tim Sales (khusus Admin) */}
         <Route
           path="/admin/teams"
@@ -104,8 +111,7 @@ function App() {
             </ProtectedRoute>
           } 
         />
-         {/* DAFTARKAN RUTE BARU DI SINI */}
-        <Route path="/admin/tracking/:username" element={<PrivateRoute><TrackingPage /></PrivateRoute>} />
+     
         
         {/* Rute lain bisa ditambahkan di sini, misalnya halaman untuk Tim Sales atau Kunjungan */}
         
