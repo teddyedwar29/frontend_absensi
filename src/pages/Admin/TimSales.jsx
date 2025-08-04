@@ -35,57 +35,37 @@ axios.interceptors.request.use(
   }
 );
 
-// Add token to requests if available
-axios.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+// 1. Pindahkan fetchSalesTeam ke luar useEffect
+  const fetchSalesTeam = async () => {
+    if (!isAuthenticated() || getUserRole() !== 'admin') {
+      setError("Anda tidak memiliki akses ke halaman ini.");
+      setLoading(false);
+      return;
     }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+    try {
+      setLoading(true);
+      const response = await axios.get('http://localhost:5000/admin/get-users');
+      setSalesTeam(Array.isArray(response.data) ? response.data : response.data.data);
+      setError(null);
+    } catch (err) {
+      console.error("Gagal mengambil data tim sales:", err);
+      if (err.response && err.response.status === 401) {
+        setError("Sesi Anda berakhir. Silakan login kembali.");
+      } else {
+        setError("Gagal memuat data. Silakan coba lagi.");
+      }
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Gagal memuat data tim sales dari API.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Menggunakan useEffect untuk memuat data dari API saat komponen dimuat
+  // 2. useEffect hanya panggil fetchSalesTeam saat mount
   useEffect(() => {
-    const fetchSalesTeam = async () => {
-      // Periksa apakah user sudah terautentikasi sebelum memanggil API
-      if (!isAuthenticated() || getUserRole() !== 'admin') {
-        setError("Anda tidak memiliki akses ke halaman ini.");
-        setLoading(false);
-        return; // Hentikan fungsi jika user tidak valid
-      }
-
-      try {
-        setLoading(true);
-
-        const response = await axios.get('http://localhost:5000/admin/get-users');
-
-        console.log("API response:", response.data); // Tambahkan ini untuk debug
-
-        // Jika response.data adalah array langsung:
-        setSalesTeam(Array.isArray(response.data) ? response.data : response.data.data);
-
-        setError(null);
-      } catch (err) {
-        console.error("Gagal mengambil data tim sales:", err);
-        if (err.response && err.response.status === 401) {
-          setError("Sesi Anda berakhir. Silakan login kembali.");
-        } else {
-          setError("Gagal memuat data. Silakan coba lagi.");
-        }
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Gagal memuat data tim sales dari API.',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchSalesTeam();
   }, []); // Dependensi kosong agar hanya berjalan sekali saat mount
 
@@ -97,12 +77,12 @@ axios.interceptors.request.use(
     return matchesSearch;
   });
 
+  // 3. Setelah POST berhasil, panggil fetchSalesTeam()
   const handleAddSales = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
-    console.log("Token yang dipakai:", token); // Debug token
     try {
-      const response = await axios.post('http://localhost:5000/register', {
+      await axios.post('http://localhost:5000/register', {
         name: newSales.name,
         username: newSales.username,
         email: newSales.email,
@@ -112,7 +92,6 @@ axios.interceptors.request.use(
         password: 'default123',
       });
 
-      setSalesTeam([...salesTeam, response.data.data || response.data]);
       setShowAddModal(false);
       setNewSales({ name: '', username: '', email: '', telpon: '', lokasi: '' });
 
@@ -121,6 +100,10 @@ axios.interceptors.request.use(
         title: 'Berhasil',
         text: 'Sales berhasil ditambahkan!',
       });
+
+      // Auto reload data
+      fetchSalesTeam();
+
     } catch (error) {
       Swal.fire({
         icon: 'error',
