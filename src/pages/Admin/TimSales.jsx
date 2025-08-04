@@ -35,6 +35,20 @@ axios.interceptors.request.use(
   }
 );
 
+// Add token to requests if available
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
   // Menggunakan useEffect untuk memuat data dari API saat komponen dimuat
   useEffect(() => {
     const fetchSalesTeam = async () => {
@@ -47,7 +61,11 @@ axios.interceptors.request.use(
 
       try {
         setLoading(true);
+<<<<<<< HEAD
         const response = await axios.get('http://localhost:5000/admin/get-users');
+=======
+        const response = await axios.get('http://localhost:5050/admin/get-users');
+>>>>>>> a024927ed27b847af92a352b9d6f050a2db98b14
         console.log("API response:", response.data); // Tambahkan ini untuk debug
 
         // Jika response.data adalah array langsung:
@@ -74,8 +92,10 @@ axios.interceptors.request.use(
   }, []); // Dependensi kosong agar hanya berjalan sekali saat mount
 
   const filteredSales = salesTeam.filter(sales => {
-    const matchesSearch = sales.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (sales.lokasi && sales.lokasi.toLowerCase().includes(searchTerm.toLowerCase()));
+    const name = sales.name ? sales.name.toLowerCase() : '';
+    const lokasi = sales.lokasi ? sales.lokasi.toLowerCase() : '';
+    const matchesSearch = name.includes(searchTerm.toLowerCase()) ||
+                          lokasi.includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -234,7 +254,7 @@ axios.interceptors.request.use(
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                      {sales.name.charAt(0).toUpperCase()}
+                      {sales.name ? sales.name.charAt(0).toUpperCase() : "?"}
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">{sales.name}</h3>
