@@ -61,11 +61,9 @@ axios.interceptors.request.use(
 
       try {
         setLoading(true);
-<<<<<<< HEAD
+
         const response = await axios.get('http://localhost:5000/admin/get-users');
-=======
-        const response = await axios.get('http://localhost:5050/admin/get-users');
->>>>>>> a024927ed27b847af92a352b9d6f050a2db98b14
+
         console.log("API response:", response.data); // Tambahkan ini untuk debug
 
         // Jika response.data adalah array langsung:
