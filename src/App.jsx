@@ -11,14 +11,11 @@ import DashboardSales from './pages/Sales/Dashboard.jsx';
 import AbsensiPage from './pages/Sales/Absensi.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx'; // Nanti kita buat file ini
 import TrackingPage from "./pages/Admin/TrackingPage";
-import { isAuthenticated } from './api/auth';
-
+import { isAuthenticated, getUserRole, logout } from './api/auth.js';
 
 // Impor ProtectedRoute yang lebih canggih untuk role-based access
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
-// Impor fungsi autentikasi
-import { isAuthenticated, getUserRole } from './api/auth.js';
 
 /**
  * DashboardDispatcher
