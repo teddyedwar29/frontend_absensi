@@ -72,11 +72,11 @@ const DashboardLayout = ({ children }) => {
           </Link>
         ))}
 
-        <button onClick={handleLogout} className="flex w-full items-center px-6 py-3 text-blue-100 hover:bg-blue-700 hover:text-white transition-colors mt-8">
+        <button onClick={handleLogout} className="flex w-full items-center px-6 py-3 text-blue-100 hover:bg-blue-700 hover:text-white transition-colors mt-8 cursor-pointer">
           <LogOut size={20} className="mr-3" /> Keluar
         </button>
       </nav>
-    </div>
+    </div> 
   );
 
   return (

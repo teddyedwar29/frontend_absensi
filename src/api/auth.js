@@ -1,8 +1,10 @@
+// src/api/auth.js
+
 import axios from "axios";
 
 // base url backend
 const API = axios.create({
-  baseURL: "http://localhost:5050", // ip backend
+  baseURL: "http://localhost:5050" // ip backend
 });
 
 // Add token to requests if available
@@ -19,16 +21,12 @@ API.interceptors.request.use(
   }
 );
 
-// Handle token expiration
+// --- PERUBAHAN DI SINI ---
+// Hapus logika redirect dari interceptor
+// Interceptor seharusnya hanya mengelola request/response, bukan navigasi.
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("userRole");
-      localStorage.removeItem("username");
-      window.location.href = "/";
-    }
     return Promise.reject(error);
   }
 );
@@ -61,7 +59,8 @@ export const logout = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("userRole");
   localStorage.removeItem("username");
-  window.location.href = "/";
+  // Navigasi ke halaman login akan ditangani oleh komponen yang memanggil ini
+  window.location.href = "/"; 
 };
 
 // check if user is authenticated
@@ -94,9 +93,11 @@ export const getUserProfile = async () => {
     const response = await API.get("/profile");
     return { success: true, user: response.data };
   } catch (error) {
-    return {
-      success: false,
-      message: error.response ? error.response.data.message : "Gagal mengambil data user",
+   return {
+    success: false,
+    message: error.response ? error.response.data.message : "Gagal mengambil data user",
     };
   }
 };
+
+export default API; // Ekspor instance API

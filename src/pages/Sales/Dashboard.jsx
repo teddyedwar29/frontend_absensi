@@ -1,159 +1,224 @@
 // src/pages/Sales/Dashboard.jsx
 
-import React, { useState } from 'react';
-import DashboardLayout from '../../components/DashboardLayout';
-import { CheckCircle, XCircle, AlertCircle, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import DashboardLayout from '../../components/DashboardLayout'; // Import komponen layout
+import { Clock, MapPin, Calendar, CheckCircle, XCircle, AlertTriangle, TrendingUp, LogIn, LogOut } from 'lucide-react';
+import Swal from 'sweetalert2';
 
-const DashboardSales = () => {
-  // Semua state dan data yang spesifik hanya untuk dashboard ini
-  const [selectedPeriod, setSelectedPeriod] = useState('today');
+const SalesDashboard = () => {
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
 
-  // Contoh data, dalam implementasi nyata, ini akan diambil dari API
-  const attendanceData = {
-    today: { present: 85, absent: 12, late: 8, total: 105 },
-    thisWeek: { present: 420, absent: 45, late: 35, total: 500 },
-    thisMonth: { present: 1850, absent: 180, late: 140, total: 2170 }
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleCheckIn = () => {
+    // Di implementasi nyata, ini akan memanggil API
+    setIsCheckedIn(true);
+    Swal.fire({
+      icon: 'success',
+      title: 'Check-in Berhasil',
+      text: 'Selamat bekerja!',
+      showConfirmButton: false,
+      timer: 1500
+    });
   };
 
-  const recentActivity = [
-    { id: 1, name: "Ahmad Rizki", action: "Check In", time: "08:15", location: "Jakarta Pusat", status: "ontime" },
-    { id: 2, name: "Sari Dewi", action: "Check Out", time: "17:30", location: "Bandung", status: "ontime" },
-    { id: 3, name: "Budi Santoso", action: "Check In", time: "08:45", location: "Surabaya", status: "late" },
-    { id: 4, name: "Maya Putri", action: "Check In", time: "08:10", location: "Yogyakarta", status: "ontime" },
-    { id: 5, name: "Doni Pratama", action: "Absent", time: "-", location: "-", status: "absent" }
-  ];
-
-  const topPerformers = [
-    { name: "Ahmad Rizki", attendance: "98%", days: 29 },
-    { name: "Sari Dewi", attendance: "96%", days: 28 },
-    { name: "Maya Putri", attendance: "94%", days: 27 }
-  ];
-
-  const currentData = attendanceData[selectedPeriod];
-  const attendanceRate = Math.round((currentData.present / currentData.total) * 100);
+  const handleCheckOut = () => {
+    // Di implementasi nyata, ini akan memanggil API
+    setIsCheckedIn(false);
+    Swal.fire({
+      icon: 'success',
+      title: 'Check-out Berhasil',
+      text: 'Sampai jumpa besok!',
+      showConfirmButton: false,
+      timer: 1500
+    });
+  };
 
   return (
-    <DashboardLayout userRole="sales">
-      {/* Semua konten dashboard yang unik ada di sini */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        {/* Stats Card - Hadir */}
-        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+    <DashboardLayout>
+      {/* Semua konten unik untuk dashboard sales ada di sini */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium">Hadir</p>
-              <p className="text-2xl sm:text-3xl font-bold text-green-600">{currentData.present}</p>
+              <p className="text-sm font-medium text-gray-600">Status Hari Ini</p>
+              <p className="text-2xl font-bold text-green-600 mt-1">
+                {isCheckedIn ? 'Hadir' : 'Belum Absen'}
+              </p>
             </div>
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <CheckCircle className="text-green-600" size={20} />
+            <div className="p-3 bg-green-100 rounded-full">
+              {isCheckedIn ? 
+                <CheckCircle className="w-6 h-6 text-green-600" /> :
+                <Clock className="w-6 h-6 text-gray-400" />
+              }
             </div>
           </div>
         </div>
 
-        {/* Stats Card - Tidak Hadir */}
-        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium">Tidak Hadir</p>
-              <p className="text-2xl sm:text-3xl font-bold text-red-600">{currentData.absent}</p>
+              <p className="text-sm font-medium text-gray-600">Jam Kerja Hari Ini</p>
+              <p className="text-2xl font-bold text-blue-600 mt-1">
+                {isCheckedIn ? '4.5 Jam' : '0 Jam'}
+              </p>
             </div>
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center">
-              <XCircle className="text-red-600" size={20} />
-            </div>
-          </div>
-        </div>
-        
-        {/* Stats Card - Terlambat */}
-        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Terlambat</p>
-              <p className="text-2xl sm:text-3xl font-bold text-yellow-600">{currentData.late}</p>
-            </div>
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <AlertCircle className="text-yellow-600" size={20} />
+            <div className="p-3 bg-blue-100 rounded-full">
+              <Clock className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        {/* Stats Card - Tingkat Kehadiran */}
-        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium">Tingkat Kehadiran</p>
-              <p className="text-2xl sm:text-3xl font-bold text-blue-600">{attendanceRate}%</p>
+              <p className="text-sm font-medium text-gray-600">Kehadiran Bulan Ini</p>
+              <p className="text-2xl font-bold text-orange-600 mt-1">22/24</p>
             </div>
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="text-blue-600" size={20} />
+            <div className="p-3 bg-orange-100 rounded-full">
+              <Calendar className="w-6 h-6 text-orange-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Tingkat Kehadiran</p>
+              <p className="text-2xl font-bold text-blue-600 mt-1">92%</p>
+            </div>
+            <div className="p-3 bg-blue-100 rounded-full">
+              <TrendingUp className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>
       </div>
-      
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
-        {/* Recent Activity */}
-        <div className="xl:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="p-4 sm:p-6 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800">Aktivitas Terbaru</h3>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+          <div className="space-y-3">
+            {!isCheckedIn ? (
+              <button 
+                onClick={handleCheckIn}
+                className="w-full flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <LogIn className="w-5 h-5 mr-2" />
+                Check In Sekarang
+              </button>
+            ) : (
+              <button 
+                onClick={handleCheckOut}
+                className="w-full flex items-center justify-center px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                <LogOut className="w-5 h-5 mr-2" />
+                Check Out Sekarang
+              </button>
+            )}
+            <button className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <Calendar className="w-5 h-5 mr-2" />
+              Ajukan Izin
+            </button>
+            <button className="w-full flex items-center justify-center px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
+              <AlertTriangle className="w-5 h-5 mr-2" />
+              Koreksi Absensi
+            </button>
           </div>
-          <div className="p-4 sm:p-6">
-            <div className="space-y-3 sm:space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-semibold flex-shrink-0">
-                      {activity.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-800 text-sm sm:text-base truncate">{activity.name}</p>
-                      <p className="text-xs sm:text-sm text-gray-600 truncate">{activity.action} • {activity.location}</p>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0 ml-2">
-                    <p className="text-xs sm:text-sm font-medium text-gray-800">{activity.time}</p>
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                      activity.status === 'ontime' ? 'bg-green-100 text-green-800' :
-                      activity.status === 'late' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {activity.status === 'ontime' ? 'Tepat Waktu' :
-                       activity.status === 'late' ? 'Terlambat' : 'Tidak Hadir'}
-                    </span>
-                  </div>
-                </div>
-              ))}
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Status Absensi Hari Ini</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                <span className="text-sm font-medium text-gray-700">Check In</span>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-semibold text-gray-900">
+                  {isCheckedIn ? '08:15' : '--:--'}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {isCheckedIn ? 'Jakarta Pusat' : 'Belum check in'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-gray-400 rounded-full mr-3"></div>
+                <span className="text-sm font-medium text-gray-700">Check Out</span>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-semibold text-gray-900">--:--</p>
+                <p className="text-xs text-gray-500">Belum check out</p>
+              </div>
             </div>
           </div>
         </div>
-        
-        {/* Top Performers */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="p-4 sm:p-6 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800">Performa Terbaik</h3>
-          </div>
-          <div className="p-4 sm:p-6">
-            <div className="space-y-3 sm:space-y-4">
-              {topPerformers.map((performer, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 min-w-0">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-semibold flex-shrink-0">
-                      {index + 1}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-800 text-sm sm:text-base truncate">{performer.name}</p>
-                      <p className="text-xs text-gray-600">{performer.days} hari hadir</p>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="font-semibold text-green-600 text-sm sm:text-base">{performer.attendance}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Riwayat Absensi 7 Hari Terakhir</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 font-medium text-gray-700">Tanggal</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-700">Check In</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-700">Check Out</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-700">Jam Kerja</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              <tr>
+                <td className="py-3 px-4 text-gray-900">Hari Ini</td>
+                <td className="py-3 px-4 text-gray-900">{isCheckedIn ? '08:15' : '--:--'}</td>
+                <td className="py-3 px-4 text-gray-900">--:--</td>
+                <td className="py-3 px-4 text-gray-900">{isCheckedIn ? '4.5 Jam' : '0 Jam'}</td>
+                <td className="py-3 px-4">
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    isCheckedIn ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {isCheckedIn ? 'Hadir' : 'Belum Absen'}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td className="py-3 px-4 text-gray-900">2 Agu 2025</td>
+                <td className="py-3 px-4 text-gray-900">08:12</td>
+                <td className="py-3 px-4 text-gray-900">17:30</td>
+                <td className="py-3 px-4 text-gray-900">9.3 Jam</td>
+                <td className="py-3 px-4">
+                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                    Tepat Waktu
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td className="py-3 px-4 text-gray-900">1 Agu 2025</td>
+                <td className="py-3 px-4 text-gray-900">08:45</td>
+                <td className="py-3 px-4 text-gray-900">17:15</td>
+                <td className="py-3 px-4 text-gray-900">8.5 Jam</td>
+                <td className="py-3 px-4">
+                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                    Terlambat
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </DashboardLayout>
   );
 };
 
-export default DashboardSales;
+export default SalesDashboard;

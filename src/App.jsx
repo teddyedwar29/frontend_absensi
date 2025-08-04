@@ -26,11 +26,11 @@ const DashboardDispatcher = () => {
   const role = getUserRole();
 
   if (role === 'admin') {
-    return <Navigate to="/admin" />;
+    return <Navigate to="/admin/dashboard" />;
   }
   
   if (role === 'sales') {
-    return <Navigate to="/sales" />;
+    return <Navigate to="/sales/dashboard" />;
   }
 
   // Jika tidak ada role atau role tidak dikenal, kembalikan ke login
@@ -86,7 +86,7 @@ function App() {
         
         {/* Rute untuk Sales */}
         <Route 
-          path="/sales" 
+          path="/sales/dashboard" 
           element={
             // ProtectedRoute kini memeriksa token DAN role yang diperlukan
             <ProtectedRoute requiredRole="sales">
@@ -97,7 +97,7 @@ function App() {
 
         {/* Rute Halaman Absensi untuk Sales */}
         <Route 
-          path="/absensi" 
+          path="/sales/absensi" 
           element={
             <ProtectedRoute requiredRole="sales">
               <AbsensiPage />
