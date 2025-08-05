@@ -10,12 +10,12 @@ import DashboardAdmin from './pages/Admin/Dashboard.jsx';
 import DashboardSales from './pages/Sales/Dashboard.jsx';
 import AbsensiPage from './pages/Sales/Absensi.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx'; // Nanti kita buat file ini
+import TrackingPage from "./pages/Admin/TrackingPage";
+import { isAuthenticated, getUserRole, logout } from './api/auth.js';
 
 // Impor ProtectedRoute yang lebih canggih untuk role-based access
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
-// Impor fungsi autentikasi
-import { isAuthenticated, getUserRole } from './api/auth.js';
 
 /**
  * DashboardDispatcher
@@ -73,7 +73,14 @@ function App() {
             </ProtectedRoute>
           } 
         />
-
+          {/* DAFTARKAN RUTE BARU DI SINI */}
+              <Route 
+              path="/admin/tracking/:username" 
+              element={
+              <ProtectedRoute>
+              <TrackingPage />
+              </ProtectedRoute>
+            } />
         {/* Rute baru untuk Tim Sales (khusus Admin) */}
         <Route
           path="/admin/teams"
@@ -104,6 +111,7 @@ function App() {
             </ProtectedRoute>
           } 
         />
+     
         
         {/* Rute lain bisa ditambahkan di sini, misalnya halaman untuk Tim Sales atau Kunjungan */}
         
