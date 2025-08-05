@@ -5,6 +5,36 @@ import axios from 'axios';
 import DashboardLayout from '../../components/DashboardLayout';
 import { CheckCircle, XCircle, AlertCircle, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import API from '../../api/auth'; // Pastikan API diimpor
+import iconMarker2x from 'leaflet/dist/images/marker-icon-2x.png';
+import iconMarker from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import RoutingMachine from '../../components/RoutingMachine'; // <-- 1. Impor komponen baru
+
+
+// Fix untuk ikon marker yang tidak muncul di React
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: iconMarker2x,
+    iconUrl: iconMarker,
+    shadowUrl: iconShadow,
+});
+// stringToColor
+const stringToColor = (str) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    // Menghasilkan HUE (warna dasar) antara 0 dan 360
+    const h = hash % 360;
+    // Menggunakan HSL (Hue, Saturation, Lightness) untuk warna yang cerah & konsisten
+    // Saturation 70% dan Lightness 50% menghasilkan warna yang bagus di peta
+    return `hsl(${h}, 70%, 50%)`;
+  }
+
 
 const DashboardAdmin = () => {
   const today = new Date();
@@ -22,6 +52,13 @@ const DashboardAdmin = () => {
   const [error, setError] = useState(null);
   const [kunjunganTotal, setKunjunganTotal] = useState(0);
   const [aktivitasSales, setAktivitasSales] = useState([]);
+   const [trackingDate, setTrackingDate] = useState(new Date().toISOString().split('T')[0]);
+  const [allRoutesData, setAllRoutesData] = useState({});
+
+   const [mapLoading, setMapLoading] = useState(true);
+  const [mapError, setMapError] = useState(null);
+  const [mapCenter] = useState([-0.947083, 100.352222]); // Default: Padang
+ 
 
   // Dummy untuk Top Performers
   const topPerformers = [
@@ -29,6 +66,62 @@ const DashboardAdmin = () => {
     { name: "Sari Dewi", attendance: "96%", days: 28 },
     { name: "Maya Putri", attendance: "94%", days: 27 }
   ];
+
+  useEffect(() => {
+    const fetchAllTrackingData = async () => {
+        setMapLoading(true);
+        setMapError(null);
+
+try {
+    const response = await API.get(`/admin/tracking/daily/all/${trackingDate}`);
+    console.log("DATA PETA MENTAH DARI BACKEND:", response.data);
+
+    // Ambil objek 'route_per_sales' dari data yang diterima
+    const rawDataByUsername = response.data.route_per_sales;
+    const processedData = {};
+
+    // Pastikan rawDataByUsername adalah objek yang valid
+    if (rawDataByUsername && typeof rawDataByUsername === 'object') {
+        // Loop melalui setiap 'username' sebagai kunci
+        for (const username in rawDataByUsername) {
+            const salesData = rawDataByUsername[username]; // { kunjungan: [...], name: "..." }
+            const routeArray = salesData.kunjungan;
+            const salesName = salesData.name;
+
+            // Pastikan array kunjungan itu valid
+            if (Array.isArray(routeArray)) {
+                // Simpan nama dan rute yang sudah diproses
+                processedData[username] = {
+                    name: salesName,
+                    route: routeArray
+                        .map(point => {
+                            if (typeof point.lokasi_koordinat === 'string' && point.lokasi_koordinat.includes(',')) {
+                                const coords = point.lokasi_koordinat.split(',').map(Number);
+                                if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+                                    return { ...point, position: [coords[0], coords[1]] };
+                                }
+                            }
+                            return null;
+                        })
+                        .filter(point => point !== null)
+                };
+            }
+        }
+    }
+    
+    setAllRoutesData(processedData);
+
+} catch (err) {
+    console.error("Gagal mengambil data tracking semua sales:", err);
+    setMapError("Gagal memuat data peta.");
+} finally {
+    setMapLoading(false);
+}
+    }
+
+    fetchAllTrackingData();
+}, [trackingDate]); // Jalan lagi kalau tanggal diganti
+
 
   useEffect(() => {
     const fetchAttendance = async () => {
@@ -355,6 +448,85 @@ const DashboardAdmin = () => {
           </div>
         </div>
       </div>
+      {/* --- BAGIAN BARU: PETA TRACKING SEMUA SALES --- */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 mt-6">
+          <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4">
+              <h3 className="text-lg font-semibold text-gray-800">Peta Kunjungan Sales</h3>
+              <div className="flex items-center gap-2">
+                <label htmlFor="map-date" className="font-medium">Tanggal:</label>
+                <input 
+                    type="date"
+                    id="map-date" 
+                    value={trackingDate}
+                    onChange={(e) => setTrackingDate(e.target.value)}
+                    className="border rounded-lg px-3 py-2"
+                />
+              </div>
+          </div>
+          <div className="p-1">
+              {mapLoading ? (
+                  <div className="text-center py-20">Memuat peta...</div>
+              ) : mapError ? (
+                  <div className="text-center py-20 text-red-500">{mapError}</div>
+              ) : Object.keys(allRoutesData).length === 0 ? (
+                  <div className="text-center py-20 text-gray-500">Tidak ada data kunjungan pada tanggal ini.</div>
+              ) : (
+             <MapContainer center={mapCenter} zoom={12} style={{ height: '500px', width: '100%', borderRadius: '0.75rem' }}>
+    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+    
+    {Object.entries(allRoutesData).map(([username, data], userIndex) => {
+        // --- PERUBAHAN DI SINI ---
+        // 1. Definisikan palet warna yang besar dan jelas berbeda
+        const colors = [
+            '#E6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+            '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
+            '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', 
+            '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'
+        ];
+        // 2. Kembali gunakan userIndex untuk memilih warna secara berurutan
+        const color = colors[userIndex % colors.length];
+        // --- AKHIR PERUBAHAN ---
+
+        const route = data.route;
+        const name = data.name;
+        const positions = route.map(p => p.position);
+
+        const customIcon = new L.DivIcon({
+            html: `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${color}" width="28px" height="28px">
+                    <path d="M12 0C7.589 0 4 3.589 4 8c0 4.411 8 16 8 16s8-11.589 8-16c0-4.411-3.589-8-8-8zm0 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>
+                </svg>`,
+            className: 'custom-div-icon',
+            iconSize: [28, 28],
+            iconAnchor: [14, 28],
+            popupAnchor: [0, -28]
+        });
+
+        return (
+            <React.Fragment key={username}>
+                {positions.length > 1 && <Polyline pathOptions={{ color }} positions={positions} />}
+                
+                {route.map((point, pointIndex) => (
+                    <Marker 
+                        key={`${username}-${pointIndex}`} 
+                        position={point.position}
+                        icon={customIcon}
+                    >
+                        <Popup>
+                            <b>{name || username}</b><br />
+                            {pointIndex + 1}. {point.nama_outlet}<br />
+                            Waktu: {point.waktu_kunjungan}
+                        </Popup>
+                    </Marker>
+                ))}
+            </React.Fragment>
+        );
+    })}
+</MapContainer>
+              )}
+          </div>
+      </div>
+      
     </DashboardLayout>
   );
 };
