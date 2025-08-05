@@ -62,7 +62,7 @@ axios.interceptors.request.use(
       try {
         setLoading(true);
 
-        const response = await axios.get('http://localhost:5000/admin/get-users');
+        const response = await axios.get('http://localhost:5050/admin/get-users');
 
         console.log("API response:", response.data); // Tambahkan ini untuk debug
 
@@ -102,7 +102,7 @@ axios.interceptors.request.use(
     const token = localStorage.getItem("token");
     console.log("Token yang dipakai:", token); // Debug token
     try {
-      const response = await axios.post('http://localhost:5000/register', {
+      const response = await axios.post('http://localhost:5050/register', {
         name: newSales.name,
         username: newSales.username,
         email: newSales.email,
