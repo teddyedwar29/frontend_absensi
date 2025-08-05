@@ -130,7 +130,8 @@ try {
       try {
         let url = '';
         if (selectedPeriod === 'today') {
-          url = 'http://localhost:5000/report/daily';
+          // Gunakan trackingDate agar sesuai tanggal yang dipilih user
+          url = `http://localhost:5000/admin/report/daily/all/${trackingDate}`;
         } else if (selectedPeriod === 'thisMonth') {
           url = `http://localhost:5000/admin/report/summary/monthly/${selectedYear}/${selectedMonth}`;
         } else if (selectedPeriod === 'thisYear') {
@@ -141,7 +142,50 @@ try {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (selectedPeriod === 'thisYear' && response.data.summary_tahunan_per_sales) {
+        // --- Tambahkan log di sini ---
+        if (selectedPeriod === 'today') {
+          console.log('RESPONSE DAILY:', response.data);
+        }
+
+        if (selectedPeriod === 'today' && response.data.laporan_harian_sales) {
+          const summary = response.data.laporan_harian_sales;
+          console.log('laporan_harian_sales:', summary);
+
+          let hadir = 0, terlambat = 0, belumAbsen = 0, total = 0, totalKunjungan = 0;
+          const aktivitasArr = Object.entries(summary).map(([id, data]) => {
+            let hadirVal = 0, terlambatVal = 0, absenVal = 0;
+            if (data.absensi?.status === "Hadir") hadirVal = 1;
+            else if (data.absensi?.status === "Terlambat") terlambatVal = 1;
+            else absenVal = 1;
+            hadir += hadirVal;
+            terlambat += terlambatVal;
+            belumAbsen += absenVal;
+            total += 1;
+            const kunjungan = data.kunjungan?.total || 0;
+            totalKunjungan += kunjungan;
+            return {
+              id,
+              name: data.name,
+              hadir: hadirVal,
+              terlambat: terlambatVal,
+              belumAbsen: absenVal,
+              kunjungan,
+              akuisisi: data.kunjungan?.akuisisi || 0,
+              maintenance: data.kunjungan?.maintenance || 0,
+              prospek: data.kunjungan?.prospek || 0,
+              status: data.absensi?.status || "-",
+            };
+          });
+          console.log('aktivitasArr:', aktivitasArr);
+          setAktivitasSales(aktivitasArr);
+          setKunjunganTotal(totalKunjungan);
+          setAttendanceData({
+            present: hadir,
+            late: terlambat,
+            absent: belumAbsen,
+            total,
+          });
+        } else if (selectedPeriod === 'thisYear' && response.data.summary_tahunan_per_sales) {
           // --- PARSING DATA TAHUNAN ---
           const summary = response.data.summary_tahunan_per_sales;
           // Buat array aktivitasSales: [{ id, bulan, hadir, terlambat, kunjungan }]
