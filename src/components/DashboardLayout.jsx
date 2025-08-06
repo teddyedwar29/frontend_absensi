@@ -67,7 +67,7 @@ const DashboardLayout = ({ children }) => {
   const Sidebar = () => (
     <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-blue-900 to-blue-800 text-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
       <div className="flex items-center justify-between h-16 px-6 border-b border-blue-700">
-        <h1 className="text-xl font-bold">AbsensiPro</h1>
+        <h1 className="text-xl font-bold">TEKMO 😎</h1>
         <button onClick={() => setSidebarOpen(false)} className="lg:hidden"><X size={24} /></button>
       </div>
       <nav className="mt-8">
@@ -110,20 +110,40 @@ const DashboardLayout = ({ children }) => {
       <Sidebar />
       {sidebarOpen && <div className="fixed inset-0 z-40 bg-black bg-opacity-25 lg:hidden" onClick={() => setSidebarOpen(false)} />}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white shadow-sm border-b border-gray-200">
-         <div className="flex items-center space-x-4">
-        <div className="text-right">
-            <p className="font-semibold">{userName}</p>
-            <p className="text-xs text-gray-500 capitalize">{userRole}</p>
-        </div>
-        {/* --- PERUBAHAN DI SINI: Bungkus avatar dengan Link --- */}
-        <Link to="/profile" className="cursor-pointer">
-            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
-                {userName.charAt(0).toUpperCase()}
-            </div>
-        </Link>
-    </div>
-        </header>
+             {/* --- MULAI PERBAIKAN DARI SINI --- */}
+            <header className="bg-white shadow-sm border-b border-gray-200">
+                <div className="mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-16">
+                        {/* Tombol Menu untuk Mobile */}
+                        <div className="flex items-center">
+                          <h1>selamat datang bosku 😍</h1>
+                            <button
+                                onClick={() => setSidebarOpen(true)}
+                                className="lg:hidden text-gray-500 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                            >
+                                <Menu size={24} />
+                            </button>
+                        </div>
+                        
+                        {/* Kartu Profil di Kanan */}
+                        <div className="flex items-center">
+                            <div className="flex items-center space-x-4">
+                                <div className="text-right">
+                                    <p className="font-semibold text-sm text-gray-800">{userName}</p>
+                                    <p className="text-xs text-gray-500 capitalize">{userRole}</p>
+                                </div>
+                                <Link to="/profile" className="cursor-pointer">
+                                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                                        {userName.charAt(0).toUpperCase()}
+                                    </div>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            {/* --- AKHIR PERBAIKAN --- */}
+
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {children}
         </main>
