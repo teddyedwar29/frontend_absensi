@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { Menu, X, LogOut, TrendingUp, Calendar, Users, MapPin, Bell, Settings } from 'lucide-react';
+import { Menu, X, LogOut, TrendingUp, Calendar, Users, MapPin, Bell, Settings, FileText } from 'lucide-react';
 import { logout } from '../api/auth';
 
 const DashboardLayout = ({ children }) => {
@@ -31,15 +31,26 @@ const DashboardLayout = ({ children }) => {
     });
   };
 
+  const handleComingSoon = (e) => {
+    e.preventDefault(); // Mencegah link berpindah halaman
+    Swal.fire({
+        title: 'Segera Hadir!',
+        text: 'Fitur ini sedang dalam pengembangan.',
+        icon: 'info',
+        confirmButtonText: 'Mengerti'
+    });
+    setSidebarOpen(false); // Menutup sidebar di mobile setelah diklik
+  };
+
   const navLinks = [];
 
   if (userRole === 'admin') {
     navLinks.push(
       { to: '/admin/dashboard', label: 'Dashboard', icon: TrendingUp },
       { to: '/admin/teams', label: 'Tim Sales', icon: Users },
-      { to: '/admin/locations', label: 'Lokasi', icon: MapPin },
-      { to: '/admin/reports', label: 'Laporan Kunjungan', icon: Bell }
-    );
+     { to: '#', label: 'Lokasi cabang kantor', icon: MapPin, isComingSoon: true },
+    { to: '#', label: 'Laporan keuangan', icon: FileText, isComingSoon: true } // Ganti ikon Bell jadi FileText biar lebih cocok
+   );
   } else if (userRole === 'sales') {
     navLinks.push(
       { to: '/sales/dashboard', label: 'Dashboard', icon: TrendingUp },
@@ -61,16 +72,31 @@ const DashboardLayout = ({ children }) => {
       </div>
       <nav className="mt-8">
         <div className="px-6 py-3"><p className="text-blue-200 text-sm font-medium">MENU UTAMA</p></div>
-        {navLinks.map((link) => (
-          <Link
+      {navLinks.map((link) => {
+    // Jika link ditandai sebagai 'isComingSoon'
+    if (link.isComingSoon) {
+        return (
+            <button
+                key={link.label}
+                onClick={handleComingSoon}
+                className={`flex w-full items-center px-6 py-3 transition-colors text-blue-100 hover:bg-blue-700 hover:text-white`}
+            >
+                <link.icon size={20} className="mr-3" /> {link.label}
+            </button>
+        );
+    }
+    // Jika tidak, tampilkan <Link> seperti biasa
+    return (
+        <Link
             key={link.to}
             to={link.to}
             className={`flex items-center px-6 py-3 transition-colors ${getActiveLinkClass(link.to)}`}
             onClick={() => setSidebarOpen(false)}
-          >
+        >
             <link.icon size={20} className="mr-3" /> {link.label}
-          </Link>
-        ))}
+        </Link>
+    );
+})}
 
         <button onClick={handleLogout} className="flex w-full items-center px-6 py-3 text-blue-100 hover:bg-blue-700 hover:text-white transition-colors mt-8 cursor-pointer">
           <LogOut size={20} className="mr-3" /> Keluar
