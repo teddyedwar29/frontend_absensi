@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 
 // Pindahkan instance Axios ke sini agar bisa digunakan di semua fungsi
 const API = axios.create({
-  baseURL: "http://localhost:5000"
+  baseURL: "http://localhost:5050"
 });
 
 API.interceptors.request.use(

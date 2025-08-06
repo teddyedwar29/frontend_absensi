@@ -37,11 +37,11 @@ const DashboardAdmin = () => {
       try {
         let url = '';
         if (selectedPeriod === 'today') {
-          url = 'http://localhost:5000/report/daily';
+          url = 'http://localhost:5050/report/daily';
         } else if (selectedPeriod === 'thisMonth') {
-          url = `http://localhost:5000/admin/report/summary/monthly/${selectedYear}/${selectedMonth}`;
+          url = `http://localhost:5050/admin/report/summary/monthly/${selectedYear}/${selectedMonth}`;
         } else if (selectedPeriod === 'thisYear') {
-          url = `http://localhost:5000/admin/report/summary/yearly/${selectedYear}`;
+          url = `http://localhost:5050/admin/report/summary/yearly/${selectedYear}`;
         }
         const token = localStorage.getItem('token');
         const response = await axios.get(url, {

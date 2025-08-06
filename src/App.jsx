@@ -11,6 +11,7 @@ import DashboardSales from './pages/Sales/Dashboard.jsx';
 import AbsensiPage from './pages/Sales/Absensi.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx'; // Nanti kita buat file ini
 import TrackingPage from "./pages/Admin/TrackingPage";
+import KunjunganPage from './pages/Sales/Kunjungan.jsx';
 import { isAuthenticated, getUserRole, logout } from './api/auth.js';
 
 // Impor ProtectedRoute yang lebih canggih untuk role-based access
@@ -110,6 +111,16 @@ function App() {
               <AbsensiPage />
             </ProtectedRoute>
           } 
+        />
+
+        {/* Rute Kunjungan untuk Sales */}
+        <Route
+          path="/sales/kunjungan"
+          element={
+            <ProtectedRoute requiredRole="sales">
+              <KunjunganPage />
+            </ProtectedRoute>
+          }
         />
      
         

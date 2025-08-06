@@ -45,7 +45,7 @@ const DashboardLayout = ({ children }) => {
       { to: '/sales/dashboard', label: 'Dashboard', icon: TrendingUp },
       { to: '/sales/absensi', label: 'Absensi', icon: Calendar },
       { to: '/sales/teams', label: 'Tim Sales', icon: Users },
-      { to: '/sales/visits', label: 'Kunjungan', icon: MapPin }
+      { to: '/sales/kunjungan', label: 'Kunjungan', icon: MapPin }
     );
   }
 
