@@ -1,7 +1,7 @@
 // src/components/DashboardLayout.jsx
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation  } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { Menu, X, LogOut, TrendingUp, Calendar, Users, MapPin, Bell, Settings, FileText } from 'lucide-react';
 import { logout } from '../api/auth';
@@ -111,20 +111,18 @@ const DashboardLayout = ({ children }) => {
       {sidebarOpen && <div className="fixed inset-0 z-40 bg-black bg-opacity-25 lg:hidden" onClick={() => setSidebarOpen(false)} />}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center">
-              <button onClick={() => setSidebarOpen(true)} className="lg:hidden mr-4"><Menu size={24} /></button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-                <p className="text-gray-600">Selamat datang kembali, {userName}!</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+         <div className="flex items-center space-x-4">
+        <div className="text-right">
+            <p className="font-semibold">{userName}</p>
+            <p className="text-xs text-gray-500 capitalize">{userRole}</p>
+        </div>
+        {/* --- PERUBAHAN DI SINI: Bungkus avatar dengan Link --- */}
+        <Link to="/profile" className="cursor-pointer">
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
                 {userName.charAt(0).toUpperCase()}
-              </div>
             </div>
-          </div>
+        </Link>
+    </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {children}
