@@ -27,6 +27,7 @@ const DashboardAdmin = () => {
 
     // State untuk Laporan & Statistik
     const [selectedPeriod, setSelectedPeriod] = useState('today');
+    const [selectedDate, setSelectedDate] = useState(todayString)
     const [selectedMonth, setSelectedMonth] = useState(today.getMonth() + 1);
     const [selectedYear, setSelectedYear] = useState(today.getFullYear());
     const [attendanceData, setAttendanceData] = useState({ present: 0, absent: 0, late: 0, total: 0 });
@@ -65,7 +66,7 @@ useEffect(() => {
         try {
             let url = '';
             if (selectedPeriod === 'today') {
-                url = `/admin/report/daily/all/${todayString}`;
+                url = `/admin/report/daily/all/${selectedDate}`;
             } else if (selectedPeriod === 'thisMonth') {
                 url = `/admin/report/summary/monthly/${selectedYear}/${selectedMonth}`;
             } else if (selectedPeriod === 'thisYear') {
@@ -143,7 +144,7 @@ useEffect(() => {
         }
     };
     fetchAttendance();
-}, [selectedPeriod, selectedMonth, selectedYear, todayString])
+}, [selectedPeriod, selectedMonth, selectedYear, selectedDate])
 
     // useEffect untuk mengambil data Peta
     useEffect(() => {
@@ -182,7 +183,7 @@ useEffect(() => {
             }
         };
         fetchAllTrackingData();
-    }, [trackingDate]);
+    }, [selectedDate,trackingDate]);
 
     const attendanceRate = attendanceData.total > 0 ? Math.round((attendanceData.present / attendanceData.total) * 100) : 0;
     const monthList = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: new Date(0, i).toLocaleString('id-ID', { month: 'long' }) }));
@@ -191,48 +192,65 @@ useEffect(() => {
     if (loading && !error) return <DashboardLayout><div className="p-8 text-center">Memuat data...</div></DashboardLayout>;
     if (error) return <DashboardLayout><div className="p-8 text-center text-red-500">{error}</div></DashboardLayout>;
 
+     function Modal({ open, onClose, children }) {
+        if (!open) return null;
+        return (
+             <div 
+            onClick={onClose} 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        >
+            {/* 👇 PERUBAHAN 2: Tambahkan onClick di div konten ini 👇 */}
+            <div 
+                onClick={(e) => e.stopPropagation()} 
+                className="bg-white rounded-xl shadow-lg max-w-4xl w-full relative p-4 sm:p-6"
+            >
+                <button
+                    onClick={onClose}
+                    className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 z-10"
+                    aria-label="Tutup"
+                >
+                    <XCircle size={28} />
+                </button>
+                {children}
+            </div>
+        </div>
+        );
+    }
+
     return (
         <DashboardLayout>
-            {/* Filter, Periode, dan Stats Cards */}
-            <div className="flex flex-wrap gap-2 mb-4 items-center">
-                 <div className="flex items-center gap-1">
-                     <label className="font-medium text-sm sm:text-base">Bulan:</label>
-                     <select
-                         value={selectedMonth}
-                         onChange={e => { setSelectedMonth(Number(e.target.value)); setSelectedPeriod('thisMonth'); }}
-                         className="border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                     >
-                         {monthList.map(m => (
-                             <option key={m.value} value={m.value}>{m.label}</option>
-                         ))}
-                     </select>
-                 </div>
-                 <div className="flex items-center gap-1">
-                     <label className="font-medium text-sm sm:text-base">Tahun:</label>
-                     <select
-                         value={selectedYear}
-                         onChange={e => { setSelectedYear(Number(e.target.value)); setSelectedPeriod('thisMonth'); }}
-                         className="border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                     >
-                         {yearList.map(y => (
-                             <option key={y} value={y}>{y}</option>
-                         ))}
-                     </select>
-                 </div>
-                 <div className="flex gap-1">
-                     <button
-                         onClick={() => setSelectedPeriod('today')}
-                         className={`px-3 py-1 rounded transition-colors text-sm sm:text-base ${selectedPeriod === 'today' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-blue-100'}`}
-                     >Hari Ini</button>
-                     <button
-                         onClick={() => setSelectedPeriod('thisMonth')}
-                         className={`px-3 py-1 rounded transition-colors text-sm sm:text-base ${selectedPeriod === 'thisMonth' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-blue-100'}`}
-                     >Bulan Ini</button>
-                     <button
-                         onClick={() => setSelectedPeriod('thisYear')}
-                         className={`px-3 py-1 rounded transition-colors text-sm sm:text-base ${selectedPeriod === 'thisYear' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-blue-100'}`}
-                     >Tahun Ini</button>
-                 </div>
+        {/* --- BAGIAN FILTER BARU --- */}
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
+                <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Tombol Tab Periode */}
+                    <div className="flex flex-shrink-0 bg-gray-100 rounded-lg p-1">
+                        <button onClick={() => setSelectedPeriod('today')} className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors ${selectedPeriod === 'today' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-black'}`}>Harian</button>
+                        <button onClick={() => setSelectedPeriod('thisMonth')} className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors ${selectedPeriod === 'thisMonth' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-black'}`}>Bulanan</button>
+                        <button onClick={() => setSelectedPeriod('thisYear')} className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors ${selectedPeriod === 'thisYear' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-black'}`}>Tahunan</button>
+                    </div>
+
+                    {/* Kontrol Filter Dinamis */}
+                    <div className="flex flex-grow items-center gap-2">
+                        {selectedPeriod === 'today' && (
+                            <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="border rounded-lg px-3 py-2 w-full sm:w-auto" />
+                        )}
+                        {selectedPeriod === 'thisMonth' && (
+                            <div className="flex items-center gap-2">
+                                <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} className="border rounded-lg px-3 py-2">
+                                    {monthList.map(m => (<option key={m.value} value={m.value}>{m.label}</option>))}
+                                </select>
+                                <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} className="border rounded-lg px-3 py-2">
+                                    {yearList.map(y => (<option key={y} value={y}>{y}</option>))}
+                                </select>
+                            </div>
+                        )}
+                        {selectedPeriod === 'thisYear' && (
+                            <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} className="border rounded-lg px-3 py-2">
+                            {yearList.map(y => (<option key={y} value={y}>{y}</option>))}
+                            </select>
+                        )}
+                    </div>
+                </div>
             </div>
 
             <div className="mb-4 font-semibold text-gray-700">
@@ -359,7 +377,6 @@ useEffect(() => {
         <table className="w-full text-sm text-left text-gray-500">
             <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
                 <tr>
-                    {/* 👇👇 PERUBAHAN DI SINI: Tambah kolom Foto 👇👇 */}
                     <th scope="col" className="px-6 py-3">Foto</th>
                     <th scope="col" className="px-6 py-3">Nama Sales</th>
                     {selectedPeriod === 'today' && <th scope="col" className="px-6 py-3">Status Absensi</th>}
@@ -376,16 +393,17 @@ useEffect(() => {
                     aktivitasSales.map((sales) => (
                         <tr key={sales.id} className="bg-white border-b hover:bg-gray-50">             
                             <td className="px-6 py-4">
-                               <button onClick={() => handleOpenDetail(sales)} disabled={!sales.foto_path}></button>
-                                {sales.foto_path ? (
-                                    <img 
-                                        src={sales.foto_path} 
-                                        alt={`Foto ${sales.name}`}
-                                        className="w-10 h-10 rounded-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-10 h-10 rounded-full bg-gray-200" />
-                                )}
+                               <button onClick={() => handleOpenDetail(sales)} disabled={!sales.foto_path} className="disabled:cursor-not-allowed">
+                                    {sales.foto_path ? (
+                                        <img 
+                                            src={sales.foto_path} 
+                                            alt={`Foto ${sales.name}`}
+                                            className="w-12 h-12 rounded-full object-cover transition-transform hover:scale-110"
+                                        />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 font-bold">?</div>
+                                    )}
+                                </button>
                             </td>
                             <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                 {sales.name}
@@ -417,6 +435,30 @@ useEffect(() => {
         </table>
     </div>
 </div>
+<Modal open={showDetailModal} onClose={handleCloseDetail}>
+    {selectedSales && (
+        <div>
+            <h3 className="text-xl font-bold mb-4 text-center">{selectedSales.name}</h3>
+            <div className="mb-4">
+                {selectedSales.foto_path ? (
+                    <img 
+                        src={selectedSales.foto_path} 
+                        alt={`Foto detail ${selectedSales.name}`}
+                        className="w-full max-h-[400px] rounded-lg object-contain bg-gray-100"
+                    />
+                ) : (
+                    <div className="w-full h-64 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400">
+                        <p>Tidak ada foto</p>
+                    </div>
+                )}
+            </div>
+            <div className="text-center space-y-2">
+                <p><strong>Status Absensi Hari Ini:</strong> {selectedSales.status}</p>
+                <p><strong>Total Kunjungan Hari Ini:</strong> {selectedSales.kunjungan}</p>
+            </div>
+        </div>
+    )}
+</Modal>
         </DashboardLayout>
     );
 };
