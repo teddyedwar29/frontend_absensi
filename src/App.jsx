@@ -12,7 +12,7 @@ import AbsensiPage from './pages/Sales/Absensi.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx'; // Nanti kita buat file ini
 import TrackingPage from "./pages/Admin/TrackingPage";
 import { isAuthenticated, getUserRole, logout } from './api/auth.js';
-
+import ProfilePage from './pages/Profilepage.jsx'; // Impor halaman profil
 // Impor ProtectedRoute yang lebih canggih untuk role-based access
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
@@ -111,7 +111,15 @@ function App() {
             </ProtectedRoute>
           } 
         />
-     
+     {/* rute untuk halaman Profil */}
+      <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          } 
+        />
         
         {/* Rute lain bisa ditambahkan di sini, misalnya halaman untuk Tim Sales atau Kunjungan */}
         
