@@ -14,6 +14,24 @@ const formatDate = (isoString) => {
         day: 'numeric', month: 'long', year: 'numeric'
     });
 };
+// Pindahkan instance Axios ke sini agar bisa digunakan di semua fungsi
+const API = axios.create({
+  baseURL: "http://localhost:5050"
+});
+
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 
 const AdminTimSales = () => {
     const [salesTeam, setSalesTeam] = useState([]);
