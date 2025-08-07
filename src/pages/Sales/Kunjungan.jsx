@@ -168,20 +168,20 @@ const KunjunganPage = () => {
   const getCurrentLocation = () => {
     setIsLoadingLocation(true);
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          const coordsString = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-          setFormData(prev => ({ ...prev, lokasi: coordsString }));
-          setLocationCoords({ latitude, longitude }); // Simpan koordinat juga jika diperlukan
-          setIsLoadingLocation(false);
-          Swal.fire({
-            icon: 'success',
-            title: 'Lokasi Didapatkan!',
-            text: `Koordinat: ${coordsString}`,
-            showConfirmButton: false,
-            timer: 1500
-          });
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    // --- PERBAIKAN UTAMA DI SINI: Hapus spasi setelah koma ---
+                    const coordsString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+                    setFormData(prev => ({ ...prev, lokasi: coordsString }));
+                    setIsLoadingLocation(false);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Lokasi Didapatkan!',
+                        text: `Koordinat: ${coordsString}`,
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
         },
         (error) => {
           console.error('Error mendapatkan lokasi:', error);

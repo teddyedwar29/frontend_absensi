@@ -115,11 +115,22 @@ const TrackingPage = () => {
                 />
                 {routeData.map((point, index) => (
                     <Marker key={index} position={point.position}>
-                    <Popup>
-                        <b>{index + 1}. {point.nama_outlet}</b><br />
-                        Waktu: {point.waktu_kunjungan}<br />
-                        Kegiatan: {point.kegiatan}
-                    </Popup>
+                      <Popup minWidth={250}>
+                          <div className="font-sans">
+                              {/* 1. Cek apakah ada foto, jika ada, tampilkan */}
+                              {point.foto_kunjungan_path && (
+                                  <img 
+                                      src={point.foto_kunjungan_path} 
+                                      alt={`Foto di ${point.nama_outlet}`} 
+                                      className="w-full h-auto rounded-md mb-2" 
+                                  />
+                              )}
+                              {/* 2. Tampilkan sisa info seperti biasa */}
+                              <p className="font-bold text-base">{index + 1}. {point.nama_outlet}</p>
+                              <p className="text-sm">Waktu: <span className="font-medium">{point.waktu_kunjungan}</span></p>
+                              <p className="text-sm">Kegiatan: <span className="font-medium capitalize">{point.kegiatan}</span></p>
+                          </div>
+                      </Popup>
                     </Marker>
                 ))}
                  {waypointPositions.length > 1 && (
