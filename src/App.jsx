@@ -129,7 +129,7 @@ function App() {
             <ProtectedRoute requiredRole="sales">
               <KunjunganPage />
             </ProtectedRoute>
-          }
+          } 
         />
      
         
