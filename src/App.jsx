@@ -112,14 +112,6 @@ function App() {
             </ProtectedRoute>
           } 
         />
-        <Route 
-          path="/sales/kunjungan" 
-          element={
-            <ProtectedRoute requiredRole="sales">
-              <KunjunganPage />
-            </ProtectedRoute>
-          } 
-        />
      {/* rute untuk halaman Profil */}
       <Route 
           path="/profile" 
@@ -129,6 +121,17 @@ function App() {
             </ProtectedRoute>
           } 
         />
+
+        {/* Rute Kunjungan untuk Sales */}
+        <Route
+          path="/sales/kunjungan"
+          element={
+            <ProtectedRoute requiredRole="sales">
+              <KunjunganPage />
+            </ProtectedRoute>
+          } 
+        />
+     
         
         {/* Rute lain bisa ditambahkan di sini, misalnya halaman untuk Tim Sales atau Kunjungan */}
         

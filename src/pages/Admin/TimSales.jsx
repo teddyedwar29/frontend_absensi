@@ -15,6 +15,20 @@ const formatDate = (isoString) => {
     });
 };
 
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+
 const AdminTimSales = () => {
     const [salesTeam, setSalesTeam] = useState([]);
     const [loading, setLoading] = useState(true);

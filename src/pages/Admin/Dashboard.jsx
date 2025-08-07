@@ -117,7 +117,7 @@ useEffect(() => {
                     maintenance: userMaintenance, prospek: userProspek,
                     status: userStatus,
                     foto_path: salesData.absensi?.foto_path 
-                        ? `http://127.0.0.1:5050/static/uploads/${salesData.absensi.foto_path}` 
+                        ? `http://127.0.0.1:5000/static/uploads/${salesData.absensi.foto_path}` 
                         : null
                 });
             }
@@ -199,7 +199,7 @@ useEffect(() => {
             onClick={onClose} 
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
         >
-            {/* 👇 PERUBAHAN 2: Tambahkan onClick di div konten ini 👇 */}
+        
             <div 
                 onClick={(e) => e.stopPropagation()} 
                 className="bg-white rounded-xl shadow-lg max-w-4xl w-full relative p-4 sm:p-6"
@@ -326,7 +326,7 @@ useEffect(() => {
                         />
                     </div>
                 </div>
-                <div className="p-1">
+                <div className="p-1 ">
                     {mapLoading ? (
                         <div className="text-center py-20">Memuat peta...</div>
                     ) : mapError ? (
@@ -334,6 +334,7 @@ useEffect(() => {
                     ) : Object.keys(allRoutesData).length === 0 ? (
                         <div className="text-center py-20 text-gray-500">Tidak ada data kunjungan pada tanggal ini.</div>
                     ) : (
+                        
                         <MapContainer center={mapCenter} zoom={11} style={{ height: '500px', width: '100%', borderRadius: '0.75rem' }}>
                             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                             {Object.entries(allRoutesData).map(([username, data], userIndex) => {

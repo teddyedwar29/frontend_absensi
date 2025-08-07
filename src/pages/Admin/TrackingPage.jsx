@@ -93,7 +93,7 @@ const TrackingPage = () => {
       <p className="text-gray-600 mb-4">Menampilkan rute untuk <strong>{username}</strong></p>
       
       <div className="bg-white p-4 rounded-xl shadow-sm mb-6 flex items-center gap-4">
-        <label htmlFor="tracking-date" className="font-semibold">Pilih Tanggal:</label>
+        <label htmlFor="tracking-date" className="font-semibold">Pilih Tanggal:</label> 
         <input 
             type="date" 
             id="tracking-date"
