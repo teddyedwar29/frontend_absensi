@@ -5,7 +5,8 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import DashboardLayout from '../../components/DashboardLayout';
 import API from '../../api/auth'; // Impor instance Axios Anda
-import { ArrowLeft } from 'lucide-react';
+// Tambahkan 'Clock' ke dalam daftar ini
+import { ArrowLeft, Clock, Building, Activity, AlertTriangle } from 'lucide-react';
 // 👇👇 TAMBAHKAN 3 BARIS INI 👇👇
 import iconMarker2x from 'leaflet/dist/images/marker-icon-2x.png';
 import iconMarker from 'leaflet/dist/images/marker-icon.png';
@@ -143,6 +144,32 @@ const TrackingPage = () => {
             </MapContainer>
         )}
       </div>
+        {/* --- BAGIAN BARU: DETAIL RUTE KUNJUNGAN --- */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+                <div className="p-4 sm:p-6 border-b border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-800">Detail Rute Kunjungan</h3>
+                </div>
+                <div className="divide-y divide-gray-200">
+                    {routeData.length > 0 ? (
+                        routeData.map((point, index) => (
+                            <div key={point.username} className="p-4 flex items-start gap-4">
+                                <span className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white font-bold text-sm rounded-full flex items-center justify-center mt-1">{index + 1}</span>
+                                <div className="flex-grow">
+                                    <p className="font-semibold text-gray-900">{point.nama_outlet}</p>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-600 mt-1">
+                                        <span className="flex items-center gap-1.5"><Clock size={14} />{point.waktu_kunjungan}</span>
+                                        <span className="flex items-center gap-1.5 capitalize"><Building size={14} />{point.kegiatan}</span>
+                                        <span className="flex items-center gap-1.5"><Activity size={14} />Kompetitor: {point.kompetitor || '-'}</span>
+                                        <span className="flex items-center gap-1.5"><AlertTriangle size={14} />Issue: {point.issue || '-'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="p-6 text-center text-gray-500">Tidak ada detail kunjungan untuk ditampilkan.</p>
+                    )}
+                </div>
+            </div>
     </DashboardLayout>
   );
 };
