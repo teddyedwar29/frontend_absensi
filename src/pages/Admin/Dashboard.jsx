@@ -363,19 +363,23 @@ function Modal({ open, onClose, children }) {
                                       {route.map((point, pointIndex) => (
                                                 <Marker key={`${username}-${pointIndex}`} position={point.position} icon={customIcon}>
                                                  <Popup minWidth={250}>
-                                                                          <div className="font-sans">
+                                                                          <div className="flex items-start gap-4 font-sans">
                                                                               {/* 1. Cek apakah ada foto, jika ada, tampilkan */}
                                                                               {point.foto_kunjungan_path && (
+                                                                                 <div className="flex-shrink-0 w-24">
                                                                                   <img 
                                                                                       src={point.foto_kunjungan_path} 
                                                                                       alt={`Foto di ${point.nama_outlet}`} 
-                                                                                      className="w-full h-auto rounded-md mb-2" 
+                                                                                      className="w-full h-auto object-cover rounded-md " 
                                                                                   />
+                                                                                </div>
                                                                               )}
                                                                               {/* 2. Tampilkan sisa info seperti biasa */}
+                                                                              <div className="flex-grow">
                                                                               <p className="font-bold text-base">{pointIndex + 1}. {point.nama_outlet}</p>
                                                                               <p className="text-sm">Waktu: <span className="font-medium">{point.waktu_kunjungan}</span></p>
                                                                               <p className="text-sm">Kegiatan: <span className="font-medium capitalize">{point.kegiatan}</span></p>
+                                                                          </div>
                                                                           </div>
                                                                       </Popup>
                                             </Marker>
