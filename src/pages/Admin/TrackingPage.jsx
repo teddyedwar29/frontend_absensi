@@ -156,11 +156,14 @@ const TrackingPage = () => {
                                 <span className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white font-bold text-sm rounded-full flex items-center justify-center mt-1">{index + 1}</span>
                                 <div className="flex-grow">
                                     <p className="font-semibold text-gray-900">{point.nama_outlet}</p>
-                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-600 mt-1">
+                                    <div className="grid grid-cols-3 gap-x-4 gap-y-1 text-sm text-gray-600 mt-1">
                                         <span className="flex items-center gap-1.5"><Clock size={14} />{point.waktu_kunjungan}</span>
                                         <span className="flex items-center gap-1.5 capitalize"><Building size={14} />{point.kegiatan}</span>
                                         <span className="flex items-center gap-1.5"><Activity size={14} />Kompetitor: {point.kompetitor || '-'}</span>
                                         <span className="flex items-center gap-1.5"><AlertTriangle size={14} />Issue: {point.issue || '-'}</span>
+                                        <span className="flex items-center gap-1.5"><AlertTriangle size={14} />potensi topup: {point.potensi_topup || '-'}</span>
+                                        <span className="flex items-center gap-1.5"><AlertTriangle size={14} />presentase pemakaian: {point.presentase_pemakaian || '-'}</span>
+                                        <span className="flex items-center gap-1.5"><AlertTriangle size={14} />rata-rata topup: {point.rata_rata_topup || '-'}</span>
                                     </div>
                                 </div>
                             </div>
