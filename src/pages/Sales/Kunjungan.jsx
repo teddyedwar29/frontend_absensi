@@ -2,9 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-// Add User to this list
-// Tambahkan 'Target' ke dalam daftar ini
-// Tambahkan 'TrendingUp' ke dalam daftar ini
 import { MapPin, Camera, Plus, Search, Filter, CheckCircle, X, XCircle, RefreshCw, Eye, Edit3, Trash2, ShieldCheck, ShieldAlert, Building, User, ChevronsRight, FileText, DollarSign, Percent, MessageSquare, Target, TrendingUp, Clock } from 'lucide-react';
 import Swal from 'sweetalert2';
 import API from '../../api/auth'; // Menggunakan instance API yang sudah terkonfigurasi
@@ -21,7 +18,6 @@ const KunjunganPage = () => {
   const videoRef = useRef(null); // Ref untuk video kamera
   const canvasRef = useRef(null); // Ref untuk canvas foto
   const [showCameraModal, setShowCameraModal] = useState(false); // State untuk modal kamera
-  // 👇👇 TAMBAHKAN STATE BARU INI 👇👇
   const [locationAccuracy, setLocationAccuracy] = useState(null);
 
 
@@ -49,7 +45,7 @@ const KunjunganPage = () => {
   const [formData, setFormData] = useState(initialFormData);
 
      // Komponen Input Field untuk merapikan form
-    const InputField = ({ icon: Icon, label, name, ...props }) => (
+    const InputField = React.memo(({ icon: Icon, label, name, ...props }) => (
         <div>
             <label className="block text-sm font-medium text-gray-700">{label}</label>
             <div className="relative mt-1">
@@ -58,35 +54,16 @@ const KunjunganPage = () => {
                 </div>
                 <input
                     name={name}
+                     autoComplete="off"
+                     onInput={props.onChange} 
                     {...props}
                     className="block w-full rounded-md border-gray-300 pl-10 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
             </div>
         </div>
-    );
+    ));
 
-  // PERUBAHAN: Mengambil username dari localStorage untuk idMR saat komponen dimuat
-  useEffect(() => {
-    const currentUser = localStorage.getItem('username');
-    if (currentUser) {
-      setFormData(prev => ({ ...prev, idMR: currentUser }));
-    }
-    fetchVisits(); // Panggil fetchVisits setelah idMR diatur
-
-     const fetchOutlets = async () => {
-        try {
-            const response = await API.get('/outlets');
-            // Pastikan data yang diterima adalah array, jika bukan, set array kosong
-            setAllOutlets(Array.isArray(response.data) ? response.data : []);
-        } catch (err) {
-            console.error("Gagal mengambil daftar outlet:", err);
-        }
-    };
-    fetchOutlets(); // Panggil fungsinya
-
-  }, []);
-
-  // Fungsi untuk mengambil data kunjungan dari backend
+     // Fungsi untuk mengambil data kunjungan dari backend
   const fetchVisits = async () => {
     try {
       setLoading(true);
@@ -111,6 +88,28 @@ const KunjunganPage = () => {
     }
   };
 
+  // PERUBAHAN: Mengambil username dari localStorage untuk idMR saat komponen dimuat
+  useEffect(() => {
+    const currentUser = localStorage.getItem('username');
+    if (currentUser) {
+      setFormData(prev => ({ ...prev, idMR: currentUser }));
+    }
+    fetchVisits(); // Panggil fetchVisits setelah idMR diatur
+
+     const fetchOutlets = async () => {
+        try {
+            const response = await API.get('/outlets');
+            // Pastikan data yang diterima adalah array, jika bukan, set array kosong
+            setAllOutlets(Array.isArray(response.data) ? response.data : []);
+        } catch (err) {
+            console.error("Gagal mengambil daftar outlet:", err);
+        }
+    };
+    fetchOutlets(); // Panggil fungsinya
+
+  }, []);
+
+
 
    const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -132,13 +131,18 @@ const KunjunganPage = () => {
                 setOutletSuggestions([]);
             }
         }
+        // Untuk field lain (kompetitor, issue, dll.)
+         setFormData(prev => ({
+        ...prev,
+        [name]: value
+    }));
     };
 
 const handleSuggestionClick = (outlet) => {
     // Isi ID dan Nama Outlet saat saran diklik
     setFormData(prev => ({
         ...prev,
-        idOutlet: outlet.id,
+        idOutlet: outlet.id_outlet, // Simpan ID Outlet
         outletName: outlet.name
     }));
     setOutletSuggestions([]);
@@ -225,7 +229,7 @@ const handleSuggestionClick = (outlet) => {
     };
 
 
- // 👇👇 TAMBAHKAN FUNGSI BARU INI 👇👇
+ 
 const handleOpenAddForm = () => {
     setShowAddForm(true); // 1. Tampilkan form
     getCurrentLocation(); // 2. Langsung cari lokasi
