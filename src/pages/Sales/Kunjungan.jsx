@@ -45,7 +45,7 @@ const KunjunganPage = () => {
   const [formData, setFormData] = useState(initialFormData);
 
      // Komponen Input Field untuk merapikan form
-    const InputField = React.memo(({ icon: Icon, label, name, ...props }) => (
+    const InputField = ({ icon: Icon, label, name, ...props }) => (
         <div>
             <label className="block text-sm font-medium text-gray-700">{label}</label>
             <div className="relative mt-1">
@@ -61,7 +61,7 @@ const KunjunganPage = () => {
                 />
             </div>
         </div>
-    ));
+    );
 
      // Fungsi untuk mengambil data kunjungan dari backend
   const fetchVisits = async () => {
@@ -109,8 +109,6 @@ const KunjunganPage = () => {
 
   }, []);
 
-
-
    const handleInputChange = (e) => {
         const { name, value } = e.target;
         // Gunakan callback `(prev => ...)` untuk memastikan state lama tidak hilang
@@ -131,18 +129,14 @@ const KunjunganPage = () => {
                 setOutletSuggestions([]);
             }
         }
-        // Untuk field lain (kompetitor, issue, dll.)
-         setFormData(prev => ({
-        ...prev,
-        [name]: value
-    }));
+  
     };
 
 const handleSuggestionClick = (outlet) => {
     // Isi ID dan Nama Outlet saat saran diklik
     setFormData(prev => ({
         ...prev,
-        idOutlet: outlet.id_outlet, // Simpan ID Outlet
+        idOutlet: outlet.id, // <-- PERBAIKAN UTAMA: Simpan ID Outlet
         outletName: outlet.name
     }));
     setOutletSuggestions([]);
