@@ -8,7 +8,7 @@ import AdminTeamPage from './pages/Admin/TimSales.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import DashboardAdmin from './pages/Admin/Dashboard.jsx';
 import DashboardSales from './pages/Sales/Dashboard.jsx';
-import AbsensiPage from './pages/Sales/Absensi.jsx';
+
 import NotFoundPage from './pages/NotFoundPage.jsx'; // Nanti kita buat file ini
 import TrackingPage from "./pages/Admin/TrackingPage";
 import KunjunganPage from './pages/Sales/Kunjungan.jsx';
@@ -103,15 +103,7 @@ function App() {
           } 
         />
 
-        {/* Rute Halaman Absensi untuk Sales */}
-        <Route 
-          path="/sales/absensi" 
-          element={
-            <ProtectedRoute requiredRole="sales">
-              <AbsensiPage />
-            </ProtectedRoute>
-          } 
-        />
+
      {/* rute untuk halaman Profil */}
       <Route 
           path="/profile" 

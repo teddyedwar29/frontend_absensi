@@ -30,6 +30,29 @@ const SalesDashboard = () => {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState(null);
 
+  const [showIzinModal, setShowIzinModal] = useState(false);
+  const [izinData, setIzinData] = useState({
+    tanggal: "",
+    alasan: "",
+  });
+
+  const handleOpenIzinModal = () => setShowIzinModal(true);
+  const handleCloseIzinModal = () => setShowIzinModal(false);
+
+  const handleChange = (e) => {
+    setIzinData({ ...izinData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmitIzin = (e) => {
+    e.preventDefault();
+    console.log("Data Izin:", izinData);
+
+    // TODO: kirim ke API backend lo
+    // await fetch("/api/izin", { method: "POST", body: JSON.stringify(izinData) })
+
+    setShowIzinModal(false);
+    setIzinData({ tanggal: "", alasan: "" });
+  }
 
   // Memperbarui waktu saat ini setiap detik
   useEffect(() => {
@@ -386,8 +409,69 @@ const SalesDashboard = () => {
               <Calendar className="w-5 h-5 mr-2" />
               Tambahkan Kunjungan
             </button>
+            <button
+              onClick={handleOpenIzinModal}
+              className="w-full flex items-center justify-center px-4 py-3 cursor-pointer bg-amber-300 text-white rounded-lg hover:bg-amber-400 transition-colors"
+            >
+              📝 Ajukan Izin
+            </button>
           </div>
         </div>
+
+        {/* Modal Izin */}
+        {showIzinModal && (
+          <div className="fixed inset-0 bg-white/20 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
+              <h2 className="text-xl font-semibold mb-4">Form Pengajuan Izin</h2>
+              <form onSubmit={handleSubmitIzin} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tanggal Izin
+                  </label>
+                  <input
+                    type="date"
+                    name="tanggal"
+                    value={izinData.tanggal}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Alasan Izin
+                  </label>
+                  <textarea
+                    name="alasan"
+                    value={izinData.alasan}
+                    onChange={handleChange}
+                    rows="3"
+                    className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    placeholder="Masukkan alasan izin..."
+                    required
+                  ></textarea>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCloseIzinModal}
+                    className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+                  >
+                    Kirim
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Status Absensi Hari Ini</h3>
@@ -435,46 +519,59 @@ const SalesDashboard = () => {
               <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                 <tr>
                   <th scope="col" className="px-4 py-3">Tanggal</th>
-                  <th scope="col" className="px-4 py-3">Absen pada jam</th> {/* Mengubah label kolom */}
+                  <th scope="col" className="px-4 py-3">Absen pada jam</th>
                   <th scope="col" className="px-4 py-3">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {historyLoading ? (
-                  <tr>
-                    <td colSpan="3" className="px-4 py-4 text-center text-gray-500">Memuat riwayat absensi...</td>
-                  </tr>
-                ) : historyError ? (
-                  <tr>
-                    <td colSpan="3" className="px-4 py-4 text-center text-red-500">{historyError}</td>
-                  </tr>
-                ) : attendanceHistory.length > 0 ? (
-                  attendanceHistory.map((record, index) => (
-                    <tr key={index} className="bg-white hover:bg-gray-50">
-                      <td className="px-4 py-4 font-medium text-gray-900 whitespace-nowrap">
-                        {formatDisplayDate(record.tanggal_absen)}
-                      </td>
-                      <td className="px-4 py-4">{record.waktu_absen || '--:--'}</td>
-                      <td className="px-4 py-4">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          record.status_absen === 'Hadir' ? 'bg-green-100 text-green-800' :
-                          record.status_absen === 'Terlambat' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800' // Untuk status lain atau belum absen
-                        }`}>
-                          {record.status_absen || 'N/A'}
-                        </span>
+                <>
+                  {historyLoading ? (
+                    <tr>
+                      <td colSpan="3" className="px-4 py-4 text-center text-gray-500">
+                        Memuat riwayat absensi...
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="3" className="px-4 py-4 text-center text-gray-500">Tidak ada riwayat absensi.</td>
-                  </tr>
-                )}
+                  ) : historyError ? (
+                    <tr>
+                      <td colSpan="3" className="px-4 py-4 text-center text-red-500">
+                        {historyError}
+                      </td>
+                    </tr>
+                  ) : attendanceHistory.length > 0 ? (
+                    attendanceHistory.map((record, index) => (
+                      <tr key={index} className="bg-white hover:bg-gray-50">
+                        <td className="px-4 py-4 font-medium text-gray-900 whitespace-nowrap">
+                          {formatDisplayDate(record.tanggal_absen)}
+                        </td>
+                        <td className="px-4 py-4">{record.waktu_absen || '--:--'}</td>
+                        <td className="px-4 py-4">
+                          <span
+                            className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              record.status_absen === 'Hadir'
+                                ? 'bg-green-100 text-green-800'
+                                : record.status_absen === 'Terlambat'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {record.status_absen || 'N/A'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="3" className="px-4 py-4 text-center text-gray-500">
+                        Tidak ada riwayat absensi.
+                      </td>
+                    </tr>
+                  )}
+                </>
               </tbody>
             </table>
           </div>
         </div>
+
       </div>
 
       {/* Custom Modal Absensi */}
