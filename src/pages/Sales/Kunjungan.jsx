@@ -112,25 +112,27 @@ const KunjunganPage = () => {
   };
 
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+   const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        // Gunakan callback `(prev => ...)` untuk memastikan state lama tidak hilang
+        setFormData(prev => ({
+            ...prev,      // 1. Salin semua nilai yang sudah ada
+            [name]: value // 2. Timpa hanya nilai dari input yang sedang diketik
+        }));
 
-    // Logika untuk autocomplete
-    if (name === 'outletName') {
-        // Kosongkan ID setiap kali nama diketik manual
-        setFormData(prev => ({ ...prev, idOutlet: '' })); 
-        if (value) {
-            const suggestions = allOutlets.filter(outlet =>
-                outlet.name.toLowerCase().includes(value.toLowerCase()) ||
-                outlet.id.toLowerCase().includes(value.toLowerCase())
-            );
-            setOutletSuggestions(suggestions);
-        } else {
-            setOutletSuggestions([]);
+        if (name === 'outletName') {
+            setFormData(prev => ({ ...prev, idOutlet: '' })); 
+            if (value) {
+                const suggestions = allOutlets.filter(outlet =>
+                    outlet.name.toLowerCase().includes(value.toLowerCase()) ||
+                    outlet.id.toLowerCase().includes(value.toLowerCase())
+                );
+                setOutletSuggestions(suggestions);
+            } else {
+                setOutletSuggestions([]);
+            }
         }
-    }
-};
+    };
 
 const handleSuggestionClick = (outlet) => {
     // Isi ID dan Nama Outlet saat saran diklik
@@ -223,45 +225,47 @@ const handleSuggestionClick = (outlet) => {
     };
 
 
-  // Fungsi untuk mendapatkan lokasi koordinat
-  const getCurrentLocation = () => {
+ // 👇👇 TAMBAHKAN FUNGSI BARU INI 👇👇
+const handleOpenAddForm = () => {
+    setShowAddForm(true); // 1. Tampilkan form
+    getCurrentLocation(); // 2. Langsung cari lokasi
+};
+
+// Ganti seluruh fungsi getCurrentLocation dengan versi ini
+const getCurrentLocation = () => {
     setIsLoadingLocation(true);
+    setLocationAccuracy(null);
     if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    // --- PERBAIKAN UTAMA DI SINI: Hapus spasi setelah koma ---
-                    const coordsString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
-                    setFormData(prev => ({ ...prev, lokasi: coordsString }));
-                    setIsLoadingLocation(false);
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Lokasi Didapatkan!',
-                        text: `Koordinat: ${coordsString}`,
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-        },
-        (error) => {
-          console.error('Error mendapatkan lokasi:', error);
-          setIsLoadingLocation(false);
-          Swal.fire({
-            icon: 'error',
-            title: 'Gagal',
-            text: 'Tidak dapat mengakses lokasi. Pastikan GPS aktif dan berikan izin lokasi.',
-          });
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-      );
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude, accuracy } = position.coords;
+                const coordsString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+                setFormData(prev => ({ ...prev, lokasi: coordsString }));
+                setLocationAccuracy(accuracy.toFixed(0));
+                setIsLoadingLocation(false);
+                
+                // --- PERUBAHAN DI SINI: Ganti jadi notifikasi kecil ---
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Lokasi berhasil dideteksi!',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            },
+            (error) => {
+                console.error('Error lokasi:', error);
+                setIsLoadingLocation(false);
+                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal mendapatkan lokasi. Pastikan GPS aktif.' });
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
     } else {
-      setIsLoadingLocation(false);
-      Swal.fire({
-        icon: 'warning',
-        title: 'Peringatan',
-        text: 'Geolocation tidak didukung oleh browser ini.',
-      });
+        setIsLoadingLocation(false);
+        Swal.fire({ icon: 'warning', title: 'Peringatan', text: 'Geolocation tidak didukung.' });
     }
-  };
+};
 
 
   const handleSubmit = async (e) => {
@@ -431,7 +435,7 @@ const filteredVisits = visits.filter(visit => {
           </div>
           <div className="flex items-center space-x-4">
             <button
-              onClick={() => setShowAddForm(true)}
+              onClick={handleOpenAddForm}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
             >
               <Plus className="w-5 h-5 mr-2" />
