@@ -1,38 +1,41 @@
 // src/components/RoutingMachine.jsx
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react'; // <-- 1. Impor useRef
 import L from 'leaflet';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import 'leaflet-routing-machine';
 import { useMap } from 'react-leaflet';
 
-const RoutingMachine = ({ waypoints }) => {
+const RoutingMachine = ({ waypoints, color }) => {
   const map = useMap();
+  const routingControlRef = useRef(null); // <-- 2. Buat ref untuk menyimpan instance
 
   useEffect(() => {
-    if (!map || waypoints.length < 2) return;
+    if (!map) return;
 
-    // Membuat instance routing control
-    const routingControl = L.Routing.control({
+    // Hapus rute lama sebelum membuat yang baru
+    if (routingControlRef.current) {
+      map.removeControl(routingControlRef.current);
+      routingControlRef.current = null;
+    }
+
+    if (waypoints.length < 2) return;
+
+    // Buat instance baru dan simpan di dalam ref
+    routingControlRef.current = L.Routing.control({
       waypoints: waypoints.map(wp => L.latLng(wp[0], wp[1])),
-      routeWhileDragging: true,
-      // Menonaktifkan tampilan instruksi belokan-demi-belokan
-      show: false, 
-      // Menyembunyikan ikon marker default dari plugin ini
-      // karena kita sudah punya marker sendiri
-      createMarker: () => null, 
+      routeWhileDragging: false,
+      show: false,
+      addWaypoints: false,
+      createMarker: () => null,
       lineOptions: {
-        styles: [{ color: 'blue', opacity: 0.8, weight: 6 }]
+        styles: [{ color: color || '#3b82f6', opacity: 0.8, weight: 6 }]
       }
     }).addTo(map);
 
-    // Membersihkan layer routing saat komponen di-unmount
-    return () => {
-      map.removeControl(routingControl);
-    };
-  }, [map, waypoints]);
+  }, [map, waypoints, color]); // <-- 3. Effect ini tetap berjalan saat data berubah
 
-  return null; // Komponen ini tidak me-render UI, hanya menambahkan layer ke peta
+  return null;
 };
 
 export default RoutingMachine;

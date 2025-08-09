@@ -2,25 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-import {
-  MapPin,
-  Camera,
-  Plus,
-  Edit3,
-  Eye,
-  Clock,
-  Target,
-  TrendingUp,
-  Calendar,
-  CheckCircle,
-  AlertCircle,
-  Search,
-  Filter,
-  XCircle,
-  RefreshCw,
-  Trash2,
-  Navigation
-} from 'lucide-react';
+// Add User to this list
+// Tambahkan 'Target' ke dalam daftar ini
+// Tambahkan 'TrendingUp' ke dalam daftar ini
+import { MapPin, Camera, Plus, Search, Filter, CheckCircle, X, XCircle, RefreshCw, Eye, Edit3, Trash2, ShieldCheck, ShieldAlert, Building, User, ChevronsRight, FileText, DollarSign, Percent, MessageSquare, Target, TrendingUp, Clock } from 'lucide-react';
 import Swal from 'sweetalert2';
 import API from '../../api/auth'; // Menggunakan instance API yang sudah terkonfigurasi
 
@@ -36,23 +21,49 @@ const KunjunganPage = () => {
   const videoRef = useRef(null); // Ref untuk video kamera
   const canvasRef = useRef(null); // Ref untuk canvas foto
   const [showCameraModal, setShowCameraModal] = useState(false); // State untuk modal kamera
+  // 👇👇 TAMBAHKAN STATE BARU INI 👇👇
+  const [locationAccuracy, setLocationAccuracy] = useState(null);
 
+
+   // --- State untuk Autocomplete Outlet ---
+  const [allOutlets, setAllOutlets] = useState([]); // Isinya [{id, name}, ...]
+  const [outletSuggestions, setOutletSuggestions] = useState([]);
+  const [isOutletInputFocused, setIsOutletInputFocused] = useState(false);
   const [locationCoords, setLocationCoords] = useState(null); // State untuk menyimpan koordinat lokasi
   const [isLoadingLocation, setIsLoadingLocation] = useState(false); // State untuk loading lokasi
 
-  const [formData, setFormData] = useState({
-    noVisit: '',
-    outletName: '',
-    lokasi: '',
-    kegiatan: '',
-    kompetitor: '',
-    rataTopUp: '',
-    potensiTopUp: '',
-    persentasePemakaian: '',
-    issue: '',
-    foto: null,
-    idMR: '' // PERUBAHAN: Menambahkan idMR ke formData
-  });
+  const initialFormData = {
+        noVisit: '', 
+        idOutlet: '', // Simpan ID Outlet di sini
+        outletName: '', // Simpan Nama Outlet di sini
+        lokasi: '', 
+        kegiatan: '',
+        kompetitor: '', 
+        rataTopUp: '', 
+        potensiTopUp: '',
+        persentasePemakaian: '', 
+        issue: '', 
+        foto: null, 
+        idMR: ''
+    };
+  const [formData, setFormData] = useState(initialFormData);
+
+     // Komponen Input Field untuk merapikan form
+    const InputField = ({ icon: Icon, label, name, ...props }) => (
+        <div>
+            <label className="block text-sm font-medium text-gray-700">{label}</label>
+            <div className="relative mt-1">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <Icon className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                    name={name}
+                    {...props}
+                    className="block w-full rounded-md border-gray-300 pl-10 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                />
+            </div>
+        </div>
+    );
 
   // PERUBAHAN: Mengambil username dari localStorage untuk idMR saat komponen dimuat
   useEffect(() => {
@@ -61,6 +72,18 @@ const KunjunganPage = () => {
       setFormData(prev => ({ ...prev, idMR: currentUser }));
     }
     fetchVisits(); // Panggil fetchVisits setelah idMR diatur
+
+     const fetchOutlets = async () => {
+        try {
+            const response = await API.get('/outlets');
+            // Pastikan data yang diterima adalah array, jika bukan, set array kosong
+            setAllOutlets(Array.isArray(response.data) ? response.data : []);
+        } catch (err) {
+            console.error("Gagal mengambil daftar outlet:", err);
+        }
+    };
+    fetchOutlets(); // Panggil fungsinya
+
   }, []);
 
   // Fungsi untuk mengambil data kunjungan dari backend
@@ -89,23 +112,38 @@ const KunjunganPage = () => {
   };
 
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    // Khusus untuk input number, pastikan nilai tidak kurang dari 0
-    if (name === 'rataTopUp' || name === 'potensiTopUp' || name === 'persentasePemakaian' || name === 'noVisit') {
-      const numValue = Number(value);
-      if (numValue < 0) {
-        setFormData(prev => ({ ...prev, [name]: 0 })); // Set ke 0 jika kurang dari 0
-      } else {
-        setFormData(prev => ({ ...prev, [name]: value }));
-      }
-    } else {
-      setFormData(prev => ({
+   const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        // Gunakan callback `(prev => ...)` untuk memastikan state lama tidak hilang
+        setFormData(prev => ({
+            ...prev,      // 1. Salin semua nilai yang sudah ada
+            [name]: value // 2. Timpa hanya nilai dari input yang sedang diketik
+        }));
+
+        if (name === 'outletName') {
+            setFormData(prev => ({ ...prev, idOutlet: '' })); 
+            if (value) {
+                const suggestions = allOutlets.filter(outlet =>
+                    outlet.name.toLowerCase().includes(value.toLowerCase()) ||
+                    outlet.id.toLowerCase().includes(value.toLowerCase())
+                );
+                setOutletSuggestions(suggestions);
+            } else {
+                setOutletSuggestions([]);
+            }
+        }
+    };
+
+const handleSuggestionClick = (outlet) => {
+    // Isi ID dan Nama Outlet saat saran diklik
+    setFormData(prev => ({
         ...prev,
-        [name]: value
-      }));
-    }
-  };
+        idOutlet: outlet.id,
+        outletName: outlet.name
+    }));
+    setOutletSuggestions([]);
+    setIsOutletInputFocused(false);
+};
 
   // Handler untuk file input (upload dari galeri)
   const handleFileChange = (e) => {
@@ -119,199 +157,168 @@ const KunjunganPage = () => {
     }
   };
 
-  // Fungsi untuk memulai kamera
   const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); // Gunakan 'environment' untuk kamera belakang
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setShowCameraModal(true);
-    } catch (error) {
-      console.error('Error mengakses kamera:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Gagal',
-        text: 'Tidak dapat mengakses kamera. Pastikan memberikan izin kamera.',
-      });
-    }
-  };
+        try {
+            // Dapatkan daftar semua perangkat video (kamera)
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
 
-  // Fungsi untuk mengambil foto dari kamera
-  const takePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const video = video.current;
-      const context = canvas.getContext('2d');
-      
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height); // Pastikan gambar pas di canvas
-      
-      const photoDataUrl = canvas.toDataURL('image/jpeg', 0.8); // Kompresi 80%
-      setFormData(prev => ({ ...prev, foto: photoDataUrl }));
-      
-      // Hentikan stream kamera
-      const stream = video.srcObject;
-      const tracks = stream.getTracks();
-      tracks.forEach(track => track.stop());
-      setShowCameraModal(false);
-    }
-  };
+            // Cari kamera depan (selfie)
+            let selfieCamera = videoDevices.find(device => device.label.toLowerCase().includes('front'));
 
-  // Fungsi untuk menghapus foto
-  const handleRemovePhoto = () => {
-    setFormData(prev => ({ ...prev, foto: null }));
-  };
+            // Jika tidak ketemu dengan nama 'front', cari yang bukan 'back' sebagai cadangan
+            if (!selfieCamera && videoDevices.length > 1) {
+                selfieCamera = videoDevices.find(device => !device.label.toLowerCase().includes('back'));
+            }
+            
+            // Tentukan constraints berdasarkan kamera yang ditemukan
+            const constraints = {
+                video: {
+                    // Jika kamera selfie ditemukan, paksa gunakan deviceId-nya
+                    deviceId: selfieCamera ? { exact: selfieCamera.deviceId } : undefined,
+                    // Jika tidak, tetap coba minta kamera 'user' sebagai fallback
+                    facingMode: 'user'
+                }
+            };
+            
+            setShowCameraModal(true);
+            setTimeout(async () => {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                }
+            }, 100);
+            
+        } catch (error) {
+            console.error('Error mengakses kamera:', error);
+            setShowCameraModal(false);
+            Swal.fire({ 
+                icon: 'error', 
+                title: 'Kamera Gagal', 
+                text: 'Tidak dapat mengakses kamera selfie. Pastikan izin sudah diberikan dan tidak ada aplikasi lain yang sedang menggunakan kamera.' 
+            });
+        }
+    };
 
-  // Fungsi untuk mendapatkan lokasi koordinat
-  const getCurrentLocation = () => {
+    const takePhoto = () => {
+        if (videoRef.current && canvasRef.current) {
+            const canvas = canvasRef.current;
+            const video = videoRef.current;
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const photoDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            setFormData(prev => ({ ...prev, foto: photoDataUrl }));
+            
+            const stream = video.srcObject;
+            stream.getTracks().forEach(track => track.stop());
+            setShowCameraModal(false);
+        }
+    };
+
+    const handleRemovePhoto = () => {
+        setFormData(prev => ({ ...prev, foto: null }));
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
+
+ // 👇👇 TAMBAHKAN FUNGSI BARU INI 👇👇
+const handleOpenAddForm = () => {
+    setShowAddForm(true); // 1. Tampilkan form
+    getCurrentLocation(); // 2. Langsung cari lokasi
+};
+
+// Ganti seluruh fungsi getCurrentLocation dengan versi ini
+const getCurrentLocation = () => {
     setIsLoadingLocation(true);
+    setLocationAccuracy(null);
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          const coordsString = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-          setFormData(prev => ({ ...prev, lokasi: coordsString }));
-          setLocationCoords({ latitude, longitude }); // Simpan koordinat juga jika diperlukan
-          setIsLoadingLocation(false);
-          Swal.fire({
-            icon: 'success',
-            title: 'Lokasi Didapatkan!',
-            text: `Koordinat: ${coordsString}`,
-            showConfirmButton: false,
-            timer: 1500
-          });
-        },
-        (error) => {
-          console.error('Error mendapatkan lokasi:', error);
-          setIsLoadingLocation(false);
-          Swal.fire({
-            icon: 'error',
-            title: 'Gagal',
-            text: 'Tidak dapat mengakses lokasi. Pastikan GPS aktif dan berikan izin lokasi.',
-          });
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-      );
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude, accuracy } = position.coords;
+                const coordsString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+                setFormData(prev => ({ ...prev, lokasi: coordsString }));
+                setLocationAccuracy(accuracy.toFixed(0));
+                setIsLoadingLocation(false);
+                
+                // --- PERUBAHAN DI SINI: Ganti jadi notifikasi kecil ---
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Lokasi berhasil dideteksi!',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            },
+            (error) => {
+                console.error('Error lokasi:', error);
+                setIsLoadingLocation(false);
+                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal mendapatkan lokasi. Pastikan GPS aktif.' });
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
     } else {
-      setIsLoadingLocation(false);
-      Swal.fire({
-        icon: 'warning',
-        title: 'Peringatan',
-        text: 'Geolocation tidak didukung oleh browser ini.',
-      });
+        setIsLoadingLocation(false);
+        Swal.fire({ icon: 'warning', title: 'Peringatan', text: 'Geolocation tidak didukung.' });
     }
-  };
+};
 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Cek apakah outlet yang diinput ada di daftar (berdasarkan ID)
+    const isExistingOutlet = allOutlets.some(outlet => outlet.id === formData.idOutlet);
 
-    // Tampilkan konfirmasi sebelum submit
-    const result = await Swal.fire({
-      title: 'Konfirmasi Data Kunjungan',
-      html: `
-        <div class="text-left text-gray-700">
-          <p><strong>Nama Outlet:</strong> ${formData.outletName}</p>
-          <p><strong>Lokasi:</strong> ${formData.lokasi}</p>
-          <p><strong>Kegiatan:</strong> ${formData.kegiatan}</p>
-          <p><strong>No. Kunjungan:</strong> ${formData.noVisit}</p>
-          <p><strong>ID MR:</strong> ${formData.idMR}</p> {/* PERUBAHAN: Menampilkan ID MR */}
-          ${formData.kompetitor ? `<p><strong>Kompetitor:</strong> ${formData.kompetitor}</p>` : ''}
-          ${formData.rataTopUp ? `<p><strong>Rata-rata Top Up:</strong> ${formData.rataTopUp}</p>` : ''}
-          ${formData.potensiTopUp ? `<p><strong>Potensi Top Up:</strong> ${formData.potensiTopUp}</p>` : ''}
-          ${formData.persentasePemakaian ? `<p><strong>% Pemakaian:</strong> ${formData.persentasePemakaian}</p>` : ''}
-          ${formData.issue ? `<p><strong>Issue:</strong> ${formData.issue}</p>` : ''}
-          ${formData.foto ? '<p><strong>Foto:</strong> <span class="text-green-600">Sudah dilampirkan</span></p>' : '<p><strong>Foto:</strong> <span class="text-red-600">Belum dilampirkan</span></p>'}
-        </div>
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Ya, Simpan Data Ini!',
-      cancelButtonText: 'Batal',
-      reverseButtons: true,
-      customClass: {
-        confirmButton: 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700',
-        cancelButton: 'px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400'
-      },
-      buttonsStyling: false
-    });
+    const proceedSubmit = async () => {
+        try {
+            const submitFormData = new FormData();
+            // Kirim semua data termasuk id_outlet dan nama_outlet
+            Object.keys(formData).forEach(key => {
+                const backendKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+                if (key === 'outletName') submitFormData.append('nama_outlet', formData[key]);
+                else if (key === 'idOutlet') submitFormData.append('id_outlet', formData[key]);
+                else if (key !== 'foto') submitFormData.append(backendKey, formData[key]);
+            });
 
-    if (result.isConfirmed) {
-      try {
-        // Validasi lokasi sebelum submit
-        if (!formData.lokasi || formData.lokasi.includes('Tidak Ada Lokasi')) {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Lokasi Diperlukan',
-            text: 'Silakan dapatkan lokasi Anda sebelum menyimpan kunjungan.',
-          });
-          return;
+            if (formData.foto) {
+                const response = await fetch(formData.foto);
+                const blob = await response.blob();
+                submitFormData.append('foto_kunjungan', blob, 'kunjungan_photo.jpeg');
+            }
+            
+            await API.post('/kunjungan', submitFormData, { headers: { 'Content-Type': 'multipart/form-data' } });
+            Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Kunjungan berhasil ditambahkan!', timer: 1500 });
+            setShowAddForm(false);
+            setFormData({ ...initialFormData, idMR: localStorage.getItem('username') || '' });
+            fetchVisits();
+        } catch(err) {
+            Swal.fire({ icon: 'error', title: 'Gagal', text: err.response?.data?.message || 'Gagal.' });
         }
+    };
 
-        // Siapkan FormData untuk mengirim file dan data lainnya
-        const submitFormData = new FormData();
-        submitFormData.append('no_visit', Number(formData.noVisit));
-        submitFormData.append('nama_outlet', formData.outletName);
-        submitFormData.append('lokasi', formData.lokasi);
-        submitFormData.append('kegiatan', formData.kegiatan);
-        submitFormData.append('kompetitor', formData.kompetitor);
-        submitFormData.append('rata_rata_topup', Number(formData.rataTopUp));
-        submitFormData.append('potensi_topup', Number(formData.potensiTopUp));
-        submitFormData.append('persentase_pemakaian', Number(formData.persentasePemakaian));
-        submitFormData.append('issue', formData.issue);
-        submitFormData.append('id_mr', formData.idMR); // PERUBAHAN: Mengirim id_mr ke backend
-
-        // Jika ada foto, tambahkan ke FormData
-        if (formData.foto) {
-          const response = await fetch(formData.foto);
-          const blob = await response.blob();
-          submitFormData.append('foto_kunjungan', blob, 'kunjungan_photo.jpeg');
-        }
-
-        // Endpoint POST tetap '/kunjungan'
-        const response = await API.post('/kunjungan', submitFormData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Berhasil',
-          text: response.data.message || 'Kunjungan baru berhasil ditambahkan!',
-          showConfirmButton: false,
-          timer: 1500
-        });
-        setShowAddForm(false);
-        setFormData({ // Reset form setelah submit
-          noVisit: '',
-          outletName: '',
-          lokasi: '',
-          kegiatan: '',
-          kompetitor: '',
-          rataTopUp: '',
-          potensiTopUp: '',
-          persentasePemakaian: '',
-          issue: '',
-          foto: null,
-          idMR: localStorage.getItem('username') || '' // PERUBAHAN: Reset idMR agar tetap sesuai user login
-        });
-        fetchVisits(); // Muat ulang data setelah submit
-      } catch (err) {
-        console.error("Gagal submit kunjungan:", err);
-        Swal.fire({
-          icon: 'error',
-          title: 'Gagal',
-          text: err.response?.data?.message || 'Gagal menambahkan kunjungan.',
-        });
-      }
+    if (isExistingOutlet || formData.idOutlet) {
+        // Jika outlet sudah ada (ID-nya terisi), langsung submit
+        await proceedSubmit();
     } else {
-      // Jika user membatalkan konfirmasi
-      Swal.fire('Dibatalkan', 'Data kunjungan tidak disimpan.', 'info');
+        // Jika outlet baru (ID-nya kosong), minta konfirmasi
+        const result = await Swal.fire({
+            title: 'Konfirmasi Outlet Baru',
+            text: `Outlet "${formData.outletName}" tidak ada di daftar. Yakin ingin menambahkannya sebagai outlet baru?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Tambahkan!',
+            cancelButtonText: 'Batal'
+        });
+        if (result.isConfirmed) {
+            await proceedSubmit();
+        }
     }
-  };
+};
   
   // Fungsi untuk mendapatkan string tanggal berdasarkan berapa hari yang lalu
   const getDateString = (daysAgo) => {
@@ -336,6 +343,27 @@ const KunjunganPage = () => {
                           lokasi.includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
+
+const filteredVisits = visits.filter(visit => {
+    const visitDate = new Date(visit.tanggal_input);
+    const today = new Date();
+    // Reset jam, menit, detik untuk perbandingan tanggal yang akurat
+    today.setHours(0, 0, 0, 0);
+    visitDate.setHours(0, 0, 0, 0);
+
+    const timeDiff = today.getTime() - visitDate.getTime();
+    const dayDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
+
+    let dayFilterPassed = false;
+    if (selectedDay === 0) dayFilterPassed = dayDiff === 0; // Tepat hari ini
+    else if (selectedDay === 1) dayFilterPassed = dayDiff === 1; // Tepat kemarin
+    else if (selectedDay === 7) dayFilterPassed = dayDiff < 7; // Dalam 7 hari terakhir
+    else dayFilterPassed = true; // Tampilkan semua jika filter 'Semua'
+
+    const searchFilterPassed = visit.nama_outlet.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return dayFilterPassed && searchFilterPassed;
+});
 
   // Statistik sekarang berdasarkan finalFilteredVisits
   const completedToday = finalFilteredVisits.length; // Menggunakan finalFilteredVisits
@@ -407,7 +435,7 @@ const KunjunganPage = () => {
           </div>
           <div className="flex items-center space-x-4">
             <button
-              onClick={() => setShowAddForm(true)}
+              onClick={handleOpenAddForm}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -484,40 +512,24 @@ const KunjunganPage = () => {
         </div>
 
         {/* Filter & Search */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Cari outlet..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-            <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-              <Filter className="w-5 h-5 mr-2" />
-              Filter
-            </button>
-          </div>
-        </div>
-
-        {/* Dropdown Filter Tanggal */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Filter Hari</label>
-          <select
-            value={selectedDay}
-            onChange={e => setSelectedDay(Number(e.target.value))}
-            className="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {dayOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
+       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col sm:flex-row gap-4">
+    <div className="relative flex-grow">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <input 
+            type="text" 
+            placeholder="Cari nama outlet..." 
+            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+        />
+    </div>
+    <div className="flex items-center gap-2 flex-shrink-0 bg-gray-100 rounded-lg p-1">
+        <button onClick={() => setSelectedDay(0)} className={`px-3 py-1 text-sm font-semibold rounded-md ${selectedDay === 0 ? 'bg-white shadow text-blue-600' : 'text-gray-600'}`}>Hari Ini</button>
+        <button onClick={() => setSelectedDay(1)} className={`px-3 py-1 text-sm font-semibold rounded-md ${selectedDay === 1 ? 'bg-white shadow text-blue-600' : 'text-gray-600'}`}>Kemarin</button>
+        <button onClick={() => setSelectedDay(7)} className={`px-3 py-1 text-sm font-semibold rounded-md ${selectedDay === 7 ? 'bg-white shadow text-blue-600' : 'text-gray-600'}`}>7 Hari</button>
+        <button onClick={() => setSelectedDay(30)} className={`px-3 py-1 text-sm font-semibold rounded-md ${selectedDay === 30 ? 'bg-white shadow text-blue-600' : 'text-gray-600'}`}>Semua</button>
+    </div>
+</div>
 
         {/* Tombol Filter Tanggal */}
         <div className="flex gap-2 mb-6 flex-wrap">
@@ -556,6 +568,9 @@ const KunjunganPage = () => {
                             : '-'}
                         </p>
                         <p className="text-sm text-gray-500">
+                          {visit.id_outlet} • ID MR: {visit.id_mr} {/* PERUBAHAN: Menampilkan id_mr */}
+                        </p>
+                        <p className="text-sm text-gray-500">
                           No Visit: {visit.no_visit} • {new Date(visit.tanggal_input).toLocaleTimeString()}
                         </p>
                       </div>
@@ -575,10 +590,6 @@ const KunjunganPage = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="space-y-3">
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">ID MR</p>
-                        <p className="text-sm font-medium text-gray-900">{visit.id_mr}</p>
-                      </div>
                       <div>
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">No. Kunjungan</p> {/* PERUBAHAN LABEL */}
                         <p className="text-sm font-medium text-gray-900">{visit.no_visit}</p> {/* MENAMPILKAN no_visit */}
@@ -832,50 +843,160 @@ const KunjunganPage = () => {
                   </div>
                 </div>
               </form>
+                            <div className="p-6 space-y-6">
+                                {/* SEKSI 1: INFORMASI UTAMA */}
+                                <div className="border-b pb-6">
+                                    <h3 className="text-lg font-medium leading-6 text-gray-900">Informasi Outlet</h3>
+                                    <div className="mt-4 grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-2">
+                                        <div className="sm:col-span-1">
+                                            <InputField
+                                                icon={User} label="No. Kunjungan" name="noVisit"
+                                                type="number" value={formData.noVisit} onChange={handleInputChange}
+                                                placeholder="1" required
+                                            />
+                                        </div>
+                                        <div className="sm:col-span-1 relative">
+                                            <label className="block text-sm font-medium text-gray-700">Nama / ID Outlet</label>
+                                            <div className="relative mt-1">
+                                                 <Building className="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400 pl-3" />
+                                                 <input
+                                                    type="text" name="outletName" value={formData.outletName}
+                                                    onChange={handleInputChange} onFocus={() => setIsOutletInputFocused(true)}
+                                                    onBlur={() => setTimeout(() => setIsOutletInputFocused(false), 200)}
+                                                    className="block w-full rounded-md border-gray-300 pl-10 shadow-sm sm:text-sm"
+                                                    placeholder="Ketik untuk mencari..." required autoComplete="off"
+                                                />
+                                            </div>
+                                            {isOutletInputFocused && outletSuggestions.length > 0 && (
+                                                <ul className="absolute z-10 w-full bg-white border rounded-lg mt-1 max-h-40 overflow-y-auto shadow-lg">
+                                                    {outletSuggestions.map((outlet, index) => (
+                                                        <li key={index} className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm" onClick={() => handleSuggestionClick(outlet)}>
+                                                            <span className="font-bold">{outlet.id}</span> - <span>{outlet.name}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* SEKSI 2: DETAIL KUNJUNGAN */}
+                                <div className="border-b pb-6">
+                                     <h3 className="text-lg font-medium leading-6 text-gray-900">Detail Kunjungan</h3>
+                                     <div className="mt-4 grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-2">
+                                        <div className="sm:col-span-2">
+                                            <label className="block text-sm font-medium text-gray-700">Lokasi (Koordinat)</label>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <input type="text" name="lokasi" value={formData.lokasi} readOnly className="w-full px-3 py-2 border rounded-lg bg-gray-100" placeholder="..." />
+                                                <button type="button" onClick={getCurrentLocation} disabled={isLoadingLocation} className="bg-blue-600 text-white p-2.5 rounded-lg disabled:bg-gray-400 flex-shrink-0">
+                                                    {isLoadingLocation ? <RefreshCw size={16} className="animate-spin" /> : <MapPin size={16} />}
+                                                </button>
+                                            </div>
+                                            {locationAccuracy && (
+                                                <div className={`mt-1 flex items-center text-xs ${locationAccuracy <= 20 ? 'text-green-600' : 'text-yellow-600'}`}>
+                                                    {locationAccuracy <= 20 ? <ShieldCheck size={14} className="mr-1" /> : <ShieldAlert size={14} className="mr-1" />}
+                                                    Akurasi: ~{locationAccuracy} m
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="sm:col-span-2">
+                                            <label className="block text-sm font-medium text-gray-700">Kegiatan</label>
+                                            <select name="kegiatan" value={formData.kegiatan} onChange={handleInputChange} className="mt-1 w-full px-3 py-2 border rounded-lg" required>
+                                                <option value="">Pilih Kegiatan</option>
+                                                <option value="akuisisi">Akuisisi</option>
+                                                <option value="maintenance">Maintenance</option>
+                                                <option value="prospek">Prospek</option>
+                                            </select>
+                                        </div>
+                                        <div className="sm:col-span-2">
+                                             <InputField
+                                                icon={FileText} label="Kompetitor" name="kompetitor"
+                                                type="text" value={formData.kompetitor} onChange={handleInputChange}
+                                                placeholder="Jika ada"
+                                            />
+                                        </div>
+                                        <InputField
+                                            icon={DollarSign} label="Rata-rata Top Up" name="rataTopUp"
+                                            type="number" value={formData.rataTopUp} onChange={handleInputChange}
+                                            placeholder="cth: 100000"
+                                        />
+                                        <InputField
+                                            icon={DollarSign} label="Potensi Top Up" name="potensiTopUp"
+                                            type="number" value={formData.potensiTopUp} onChange={handleInputChange}
+                                            placeholder="cth: 5000000"
+                                        />
+                                        <InputField
+                                            icon={Percent} label="% Pemakaian" name="persentasePemakaian"
+                                            type="number" value={formData.persentasePemakaian} onChange={handleInputChange}
+                                            placeholder="cth: 10"
+                                        />
+                                        <div className="sm:col-span-2">
+                                             <InputField
+                                                icon={MessageSquare} label="Issue" name="issue"
+                                                type="text" value={formData.issue} onChange={handleInputChange}
+                                                placeholder="Catatan atau masalah"
+                                            />
+                                        </div>
+                                     </div>
+                                </div>
+                                
+                                {/* SEKSI 3: FOTO */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Foto Outlet</label>
+                                    <div className="mt-2 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-blue-400" onClick={startCamera}>
+                                        {formData.foto ? (
+                                            <img src={formData.foto} alt="Preview Outlet" className="max-h-40 w-auto mx-auto" />
+                                        ) : (
+                                            <div>
+                                                <Camera className="w-12 h-12 text-gray-400 mx-auto" />
+                                                <p className="mt-2 text-sm text-gray-600">Klik untuk ambil foto</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p onClick={() => fileInputRef.current.click()} className="text-center text-xs text-blue-600 hover:underline mt-2 cursor-pointer">atau upload dari galeri</p>
+                                    <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
+                                </div>
+                            </div>
+                            
+                            <div className="flex justify-end space-x-3 p-6 bg-gray-50 border-t">
+                                <button type="button" onClick={() => setShowAddForm(false)} className="px-4 py-2 text-gray-700 bg-white border rounded-lg hover:bg-gray-100">Batal</button>
+                                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Simpan Kunjungan</button>
+                            </div>
+                        </form>
             </div>
           </div>
         )}
 
         {/* Modal Kamera */}
-        {showCameraModal && (
-          <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-4 w-full max-w-md">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Ambil Foto Outlet</h3>
-                <button
-                  onClick={() => {
-                    const stream = videoRef.current?.srcObject;
-                    if (stream) {
-                      const tracks = stream.getTracks();
-                      tracks.forEach(track => track.stop());
-                    }
-                    setShowCameraModal(false);
-                  }}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-              
-              <div className="relative">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full h-64 object-cover rounded-lg bg-gray-200"
-                />
-                <button
-                  onClick={takePhoto}
-                  className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full"
-                >
-                  <Camera size={24} />
-                </button>
-              </div>
-              
-              <canvas ref={canvasRef} className="hidden" />
-            </div>
-          </div>
-        )}
+            {showCameraModal && (
+                <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-[60]">
+                    <div className="bg-white rounded-lg p-4 w-full max-w-md">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold">Ambil Foto Outlet</h3>
+                            <button
+                                onClick={() => {
+                                    const stream = videoRef.current?.srcObject;
+                                    if (stream) stream.getTracks().forEach(track => track.stop());
+                                    setShowCameraModal(false);
+                                }}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="relative">
+                            <video ref={videoRef} autoPlay playsInline className="w-full h-64 object-cover rounded-lg bg-gray-200" />
+                            <button
+                                onClick={takePhoto}
+                                className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full"
+                            >
+                                <Camera size={24} />
+                            </button>
+                        </div>
+                        <canvas ref={canvasRef} className="hidden" />
+                    </div>
+                </div>
+            )}
       </div>
     </DashboardLayout>
   );

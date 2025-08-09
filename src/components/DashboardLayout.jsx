@@ -64,7 +64,7 @@ const DashboardLayout = ({ children }) => {
   };
 
   const Sidebar = () => (
-    <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-blue-900 to-blue-800 text-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+    <div className={`fixed inset-y-0 left-0 z-[1000] w-64 bg-gradient-to-b from-blue-900 to-blue-800 text-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
       <div className="flex items-center justify-between h-16 px-6 border-b border-blue-700">
         <h1 className="text-xl font-bold">TEKMO 😎</h1>
         <button onClick={() => setSidebarOpen(false)} className="lg:hidden"><X size={24} /></button>
@@ -107,7 +107,7 @@ const DashboardLayout = ({ children }) => {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
-      {sidebarOpen && <div className="fixed inset-0 z-40 bg-black bg-opacity-25 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+      {sidebarOpen && <div className="fixed inset-0 z-[999] bg-black bg-opacity-25 lg:hidden" onClick={() => setSidebarOpen(false)} />}
       <div className="flex-1 flex flex-col overflow-hidden">
              {/* --- MULAI PERBAIKAN DARI SINI --- */}
             <header className="bg-white shadow-sm border-b border-gray-200">

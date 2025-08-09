@@ -8,6 +8,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import API from '../../api/auth';
+import RoutingMachine from '../../components/RoutingMachine'; // Komponen untuk menampilkan rute
 
 // --- KODE HELPER & PERBAIKAN ---
 
@@ -192,17 +193,19 @@ useEffect(() => {
     if (loading && !error) return <DashboardLayout><div className="p-8 text-center">Memuat data...</div></DashboardLayout>;
     if (error) return <DashboardLayout><div className="p-8 text-center text-red-500">{error}</div></DashboardLayout>;
 
-     function Modal({ open, onClose, children }) {
-        if (!open) return null;
-        return (
-             <div 
+    // --- PERBAIKAN OVERLAY: Komponen Modal diperbarui dengan z-index tinggi ---
+function Modal({ open, onClose, children }) {
+    if (!open) return null;
+    return (
+    <div 
             onClick={onClose} 
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
         >
-        
+        {/* // z-index di sini diatur sangat tinggi (1001) untuk memastikan selalu di atas peta */}
+        <div style={{ zIndex: 1001 }} className="fixed inset-0 flex items-center justify-center bg-black/50 p-4">
             <div 
                 onClick={(e) => e.stopPropagation()} 
-                className="bg-white rounded-xl shadow-lg max-w-4xl w-full relative p-4 sm:p-6"
+                className="bg-white rounded-xl shadow-lg max-w-lg w-full relative p-4 sm:p-6"
             >
                 <button
                     onClick={onClose}
@@ -214,8 +217,9 @@ useEffect(() => {
                 {children}
             </div>
         </div>
-        );
-    }
+    </div>
+    );
+}
 
     return (
         <DashboardLayout>
@@ -255,7 +259,7 @@ useEffect(() => {
 
             <div className="mb-4 font-semibold text-gray-700">
                 Periode Laporan: {selectedPeriod === 'today'
-                    ? `Hari Ini (${new Date(todayString).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })})`
+                    ? `hari ini (${new Date(selectedDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })})`
                     : selectedPeriod === 'thisMonth'
                         ? `${monthList.find(m => m.value === selectedMonth).label} ${selectedYear}`
                         : `Tahun ${selectedYear}`
@@ -355,10 +359,29 @@ useEffect(() => {
 
                                 return (
                                     <React.Fragment key={username}>
-                                        {positions.length > 1 && <Polyline pathOptions={{ color }} positions={positions} />}
-                                        {route.map((point, pointIndex) => (
-                                            <Marker key={`${username}-${pointIndex}`} position={point.position} icon={customIcon}>
-                                                <Popup><b>{name || username}</b><br />{pointIndex + 1}. {point.nama_outlet}<br />Waktu: {point.waktu_kunjungan}</Popup>
+                                          {positions.length > 1 && <Polyline pathOptions={{ color }} positions={positions} />}    
+                                      {route.map((point, pointIndex) => (
+                                                <Marker key={`${username}-${pointIndex}`} position={point.position} icon={customIcon}>
+                                                 <Popup minWidth={250}>
+                                                                          <div className="flex items-start gap-4 font-sans">
+                                                                              {/* 1. Cek apakah ada foto, jika ada, tampilkan */}
+                                                                              {point.foto_kunjungan_path && (
+                                                                                 <div className="flex-shrink-0 w-24">
+                                                                                  <img 
+                                                                                      src={point.foto_kunjungan_path} 
+                                                                                      alt={`Foto di ${point.nama_outlet}`} 
+                                                                                      className="w-full h-auto object-cover rounded-md " 
+                                                                                  />
+                                                                                </div>
+                                                                              )}
+                                                                              {/* 2. Tampilkan sisa info seperti biasa */}
+                                                                              <div className="flex-grow">
+                                                                              <p className="font-bold text-base">{pointIndex + 1}. {point.nama_outlet}</p>
+                                                                              <p className="text-sm">Waktu: <span className="font-medium">{point.waktu_kunjungan}</span></p>
+                                                                              <p className="text-sm">Kegiatan: <span className="font-medium capitalize">{point.kegiatan}</span></p>
+                                                                          </div>
+                                                                          </div>
+                                                                      </Popup>
                                             </Marker>
                                         ))}
                                     </React.Fragment>
