@@ -2,24 +2,36 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { Clock, MapPin, Calendar, CheckCircle, XCircle, AlertTriangle, TrendingUp, LogIn, LogOut, Camera, Image } from 'lucide-react';
-import Swal from 'sweetalert2';
+import { Clock, MapPin, Calendar, CheckCircle, XCircle, TrendingUp, LogIn, Camera, Image, RefreshCw, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { checkIn, getTodayAttendanceStatus, getAttendanceHistory } from '../../api/absensi'; // Import API absensi dan getAttendanceHistory
 
 const SalesDashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [isCheckedIn, setIsCheckedIn] = useState(false);
-  const [checkInTime, setCheckInTime] = useState(null);
-  const [checkOutTime, setCheckOutTime] = useState(null);
+  const [isCheckedIn, setIsCheckedIn] = useState(false); // Status absensi hari ini (sudah check-in atau belum)
+  const [checkInTime, setCheckInTime] = useState(null); // Waktu check-in (dari API atau setelah absen berhasil)
+  const [checkOutTime, setCheckOutTime] = useState(null); // Waktu check-out
 
-  // State untuk lokasi dan foto
-  const [userLocation, setUserLocation] = useState('Lokasi tidak diketahui');
-  const [latitude, setLatitude] = useState(null);
-  const [longitude, setLongitude] = useState(null);
-  const [capturedPhoto, setCapturedPhoto] = useState(null); // Menyimpan Base64/URL foto yang diambil
+  // State untuk modal absensi kustom
+  const [showAbsensiModal, setShowAbsensiModal] = useState(false);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [locationData, setLocationData] = useState({ latitude: null, longitude: null, address: '' });
+  const [photoData, setPhotoData] = useState(null); // Menyimpan base64/URL foto
+  const [showCameraStream, setShowCameraStream] = useState(false); // Untuk menampilkan stream kamera di modal
+  const [absensiMessage, setAbsensiMessage] = useState({ type: '', text: '' }); // Untuk pesan sukses/gagal di modal
+
+  const videoRef = useRef(null); // Ref untuk elemen video kamera
+  const canvasRef = useRef(null); // Ref untuk elemen canvas foto
 
   const navigate = useNavigate();
 
+  // State untuk riwayat absensi
+  const [attendanceHistory, setAttendanceHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState(null);
+
+
+  // Memperbarui waktu saat ini setiap detik
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -27,365 +39,254 @@ const SalesDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Fungsi untuk mendapatkan lokasi pengguna
-  const getUserLocation = async () => {
-    return new Promise((resolve, reject) => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            setLatitude(lat);
-            setLongitude(lon);
-            const locationString = `Lat: ${lat.toFixed(6)}, Long: ${lon.toFixed(6)}`;
-            setUserLocation(locationString);
-            resolve({ latitude: lat, longitude: lon, locationString: locationString });
-          },
-          (error) => {
-            console.error("Error getting location:", error);
-            const errorLocationString = 'Gagal mendapatkan lokasi.';
-            setUserLocation(errorLocationString);
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal Mendapatkan Lokasi',
-                text: 'Pastikan Anda mengizinkan akses lokasi untuk aplikasi ini.',
-            });
-            reject(error);
-          },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
+  // Mengambil status absensi hari ini dan riwayat dari API saat komponen dimuat
+  useEffect(() => {
+    const fetchData = async () => {
+      // Fetch status absensi hari ini
+      const statusResponse = await getTodayAttendanceStatus();
+      if (statusResponse.success && statusResponse.data && statusResponse.data.status_absen !== 'belum_absen') {
+        setIsCheckedIn(true);
+        if (statusResponse.data.waktu_absen) {
+          const today = new Date();
+          const [hours, minutes, seconds] = statusResponse.data.waktu_absen.split(':').map(Number);
+          today.setHours(hours, minutes, seconds, 0);
+          setCheckInTime(today);
+        }
       } else {
-        const notSupportedString = 'Geolocation tidak didukung oleh browser Anda.';
-        setUserLocation(notSupportedString);
-        Swal.fire({
-            icon: 'error',
-            title: 'Browser Tidak Mendukung Geolocation',
-            text: 'Silakan gunakan browser yang mendukung fitur lokasi.',
-        });
-        reject(new Error("Geolocation not supported"));
+        setIsCheckedIn(false);
       }
-    });
-  };
 
-  // Fungsi untuk mengambil foto dari kamera (dipanggil dari dalam SweetAlert)
-  const capturePhotoFromCamera = async () => {
-    let stream = null; // Inisialisasi stream di luar try-catch
-    let capturedData = null; // Variabel lokal untuk menyimpan data foto
+      // Fetch riwayat absensi
+      setHistoryLoading(true);
+      const historyResponse = await getAttendanceHistory();
+      if (historyResponse.success) {
+        // Sortir riwayat berdasarkan tanggal terbaru dan ambil 7 hari terakhir
+        const sortedHistory = historyResponse.data.sort((a, b) => new Date(b.tanggal_absen) - new Date(a.tanggal_absen));
+        setAttendanceHistory(sortedHistory.slice(0, 7)); // Ambil 7 record terbaru
+        setHistoryError(null);
+      } else {
+        setHistoryError(historyResponse.message);
+      }
+      setHistoryLoading(false);
+    };
+    fetchData();
+  }, []); // Jalankan hanya sekali saat komponen dimuat
 
-    try {
-      const { value: photoConfirmed } = await Swal.fire({
-        title: 'Ambil Foto',
-        html: `
-          <div class="flex flex-col items-center">
-            <video id="camera-feed" class="w-full max-w-xs rounded-lg mb-2"></video>
-            <canvas id="photo-canvas" class="hidden"></canvas>
-            <img id="photo-preview" class="w-full max-w-xs rounded-lg hidden mb-2" src=""/>
-            <div class="flex space-x-2 mt-2">
-              <button id="take-photo-button" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-camera inline-block mr-1"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.5Z"/><circle cx="12" cy="13" r="3"/></svg>
-                Ambil
-              </button>
-              <button id="retake-photo-button" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw inline-block mr-1"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                Ulangi
-              </button>
-            </div>
-          </div>
-        `,
-        showConfirmButton: true,
-        confirmButtonText: 'Gunakan Foto Ini',
-        confirmButtonColor: '#10B981',
-        allowOutsideClick: false,
-        didOpen: (popup) => {
-          const videoElement = popup.querySelector('#camera-feed');
-          const canvasElement = popup.querySelector('#photo-canvas');
-          const takePhotoBtn = popup.querySelector('#take-photo-button');
-          const retakePhotoBtn = popup.querySelector('#retake-photo-button');
-          const photoPreview = popup.querySelector('#photo-preview');
-          const context = canvasElement.getContext('2d');
-
-          navigator.mediaDevices.getUserMedia({ video: true })
-            .then(camStream => {
-              stream = camStream; // Assign to outer stream variable
-              if (videoElement) {
-                videoElement.srcObject = stream;
-                videoElement.play();
-              }
-            })
-            .catch(err => {
-              console.error("Error accessing camera: ", err);
-              Swal.showValidationMessage(`Gagal mengakses kamera: ${err.message}. Pastikan izin kamera diberikan.`);
-              Swal.disableButtons(); // Disable "Gunakan Foto Ini" button
-            });
-
-          takePhotoBtn.onclick = () => {
-            if (videoElement && canvasElement) {
-                canvasElement.width = videoElement.videoWidth;
-                canvasElement.height = videoElement.videoHeight;
-                context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-                const imageData = canvasElement.toDataURL('image/png');
-                capturedData = imageData; // Update lokal variabel
-                setCapturedPhoto(imageData); // Update React state
-                photoPreview.src = imageData;
-                photoPreview.classList.remove('hidden');
-                videoElement.classList.add('hidden');
-                takePhotoBtn.classList.add('hidden');
-                retakePhotoBtn.classList.remove('hidden');
-                Swal.enableButtons(); // Enable "Gunakan Foto Ini" button
-            }
-          };
-
-          retakePhotoBtn.onclick = () => {
-            photoPreview.classList.add('hidden');
-            videoElement.classList.remove('hidden');
-            takePhotoBtn.classList.remove('hidden');
-            retakePhotoBtn.classList.add('hidden');
-            capturedData = null; // Reset lokal variabel
-            setCapturedPhoto(null); // Reset captured photo state
-            Swal.disableButtons(); // Disable "Gunakan Foto Ini" button
-          };
-          Swal.disableButtons(); // Initially disable "Gunakan Foto Ini" until photo is taken
-        },
-        willClose: () => {
-          if (stream) {
-            stream.getTracks().forEach(track => track.stop()); // Stop camera stream when modal closes
+  // Fungsi untuk mendapatkan lokasi pengguna
+  const getCurrentLocation = async () => {
+    setIsLoadingLocation(true);
+    setAbsensiMessage({ type: '', text: '' }); // Clear previous messages
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          let address = `Lat: ${latitude.toFixed(6)}, Long: ${longitude.toFixed(6)}`; // Default jika reverse geocoding gagal
+          try {
+            // Reverse geocoding menggunakan Nominatim OpenStreetMap
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+            );
+            const data = await res.json();
+            address = data.display_name || address; // Simpan alamat lengkap untuk backend
+            setAbsensiMessage({ type: 'success', text: 'Lokasi berhasil didapatkan!' });
+          } catch (err) {
+            console.error("Error reverse geocoding:", err);
+            setAbsensiMessage({ type: 'warning', text: 'Gagal mendapatkan alamat, menggunakan koordinat.' });
           }
+          setLocationData({ latitude, longitude, address: address }); // Simpan alamat lengkap di 'address'
+          setIsLoadingLocation(false);
         },
-        preConfirm: () => {
-          if (!capturedData) { // Cek variabel lokal
-            Swal.showValidationMessage('Silakan ambil foto terlebih dahulu.');
-            return false;
-          }
-          return capturedData; // Kembalikan data foto
-        }
-      });
-      return capturedData; // Mengembalikan data foto yang dikonfirmasi
-    } catch (err) {
-      console.error("Error accessing camera or taking photo: ", err);
-      Swal.fire({
-        icon: 'error',
-        title: 'Gagal Mengakses Kamera',
-        text: `Pastikan izin kamera diberikan: ${err.message}`,
-      });
-      setCapturedPhoto(null);
-      return null; // Mengembalikan null jika gagal
-    } finally {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop()); // Pastikan stream dihentikan
-        }
+        (error) => {
+          console.error('Error mendapatkan lokasi:', error);
+          setIsLoadingLocation(false);
+          setLocationData({ latitude: null, longitude: null, address: 'Gagal mendapatkan lokasi.' });
+          let errorMsg = '';
+          if (error.code === 1) errorMsg = 'Izin lokasi ditolak. Aktifkan di pengaturan browser.';
+          else if (error.code === 2) errorMsg = 'Lokasi tidak tersedia. Pastikan GPS aktif.';
+          else if (error.code === 3) errorMsg = 'Timeout mendapatkan lokasi.';
+          else errorMsg = 'Terjadi kesalahan saat mengambil lokasi.';
+          setAbsensiMessage({ type: 'error', text: errorMsg });
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      );
+    } else {
+      setIsLoadingLocation(false);
+      setLocationData({ latitude: null, longitude: null, address: 'Geolocation tidak didukung oleh browser ini.' });
+      setAbsensiMessage({ type: 'error', text: 'Geolocation tidak didukung oleh browser ini.' });
     }
   };
 
-  // Fungsi untuk memilih foto dari galeri (dipanggil dari dalam SweetAlert)
-  const selectPhotoFromGallery = async () => {
-    return new Promise((resolve, reject) => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      input.onchange = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const imageData = e.target.result;
-            setCapturedPhoto(imageData); // Update React state
-            resolve(imageData); // Resolve dengan data foto
-          };
-          reader.onerror = (e) => {
-            console.error("Error reading file: ", e);
-            Swal.showValidationMessage('Gagal membaca file gambar.');
-            reject(e);
-          };
-          reader.readAsDataURL(file);
-        } else {
-          reject(new Error('Tidak ada file yang dipilih.'));
-        }
-      };
-      input.click(); // Trigger the file input click
-    });
-  };
-
-  // --- PERUBAHAN BARU: Fungsi untuk menampilkan SweetAlert pilihan foto ---
-  const showPhotoSelectionSwal = async () => {
-      return new Promise(async (resolve) => {
-          const { isDismissed } = await Swal.fire({
-              title: 'Pilih Sumber Foto',
-              html: `
-                <div class="flex flex-col items-center justify-center space-y-4">
-                  <button id="camera-option" class="w-full flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-camera mr-2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.5Z"/><circle cx="12" cy="13" r="3"/></svg>
-                    Ambil Foto Langsung
-                  </button>
-                  <button id="gallery-option" class="w-full flex items-center justify-center px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image mr-2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                    Pilih dari Galeri
-                  </button>
-                </div>
-              `,
-              showCancelButton: true,
-              showConfirmButton: false, // Tidak ada tombol OK/Confirm di sini
-              cancelButtonText: 'Batal Absensi',
-              allowOutsideClick: false,
-              didOpen: (popup) => {
-                document.getElementById('camera-option').addEventListener('click', async () => {
-                  const photo = await capturePhotoFromCamera(); // Panggil fungsi kamera
-                  Swal.close(); // Tutup SweetAlert pilihan foto
-                  resolve(photo); // Resolve outer promise with photo data
-                });
-
-                document.getElementById('gallery-option').addEventListener('click', async () => {
-                  try {
-                    const photo = await selectPhotoFromGallery(); // Panggil fungsi galeri
-                    Swal.close(); // Tutup SweetAlert pilihan foto
-                    resolve(photo); // Resolve outer promise with photo data
-                  } catch (err) {
-                    console.error("Error selecting photo:", err);
-                    Swal.fire({
-                      icon: 'error',
-                      title: 'Gagal Memilih Foto',
-                      text: err.message || 'Terjadi kesalahan saat memilih foto dari galeri.',
-                    });
-                    resolve(null); // Resolve with null on error
-                  }
-                });
-              }
-          });
-          if (isDismissed) {
-              resolve(null); // Resolve with null if user dismissed photo selection
-          }
-      });
-  };
-  // --- AKHIR PERUBAHAN BARU ---
-
-
-  const handleCheckIn = async () => {
-    // Reset location and photo state for a fresh attempt
-    setUserLocation('Mengambil lokasi...');
-    setLatitude(null);
-    setLongitude(null);
-    setCapturedPhoto(null); // Reset captured photo
-
-    // Tampilkan loading SweetAlert segera
-    Swal.fire({
-      title: 'Memproses Absensi...',
-      html: 'Sedang mengambil lokasi dan menyiapkan data. Mohon tunggu...',
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      }
-    });
-
-    let confirmedLocationString = 'Lokasi tidak tersedia.';
-    let finalPhotoData = null; // Untuk menyimpan data foto akhir
-
+  // Fungsi untuk memulai kamera
+  const startCamera = async () => {
+    setAbsensiMessage({ type: '', text: '' }); // Clear previous messages
     try {
-        const locationCoords = await getUserLocation();
-        confirmedLocationString = locationCoords.locationString;
-
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        Swal.close(); // Tutup SweetAlert loading awal
-
-        // --- PERUBAHAN BARU: Panggil showPhotoSelectionSwal dan tunggu hasilnya ---
-        finalPhotoData = await showPhotoSelectionSwal();
-        // --- AKHIR PERUBAHAN BARU ---
-
-        if (!finalPhotoData) { // Jika user membatalkan atau tidak ada foto yang dipilih
-            Swal.fire({
-                icon: 'error',
-                title: 'Absensi Dibatalkan',
-                text: 'Foto belum diambil atau dipilih, absensi dibatalkan.',
-                showConfirmButton: false,
-                timer: 2000
-            });
-            return; // Hentikan proses
-        }
-
-        // Sekarang tampilkan SweetAlert konfirmasi akhir dengan foto yang sudah didapat
-        const { isConfirmed: finalConfirmed } = await Swal.fire({
-            title: 'Konfirmasi Absensi',
-            html: `
-              <div class="text-center p-4">
-                <p class="text-lg font-semibold mb-2">Lokasi Anda:</p>
-                <p class="text-md text-gray-700 mb-4">${confirmedLocationString}</p>
-                <p class="text-lg font-semibold mb-2">Foto Anda:</p>
-                <img src="${finalPhotoData}" alt="Foto Absen" class="mx-auto rounded-lg shadow-md w-36 h-36 object-cover mb-4"/>
-                <p class="text-sm text-gray-600">Pastikan lokasi dan foto sudah benar.</p>
-              </div>
-            `,
-            icon: 'info',
-            showCancelButton: true,
-            confirmButtonColor: '#10B981',
-            cancelButtonColor: '#EF4444',
-            confirmButtonText: 'OK, Absen!',
-            cancelButtonText: 'Batal',
-            customClass: {
-              popup: 'rounded-xl shadow-lg',
-              confirmButton: 'px-6 py-2 rounded-lg text-white font-semibold',
-              cancelButton: 'px-6 py-2 rounded-lg text-white font-semibold',
-            },
-            preConfirm: () => {
-                // Foto sudah divalidasi di langkah sebelumnya, jadi di sini selalu true
-                return true;
-            }
-        });
-
-        if (finalConfirmed) {
-          const now = new Date();
-          setIsCheckedIn(true);
-          setCheckInTime(now);
-          Swal.fire({
-            icon: 'success',
-            title: 'Check-in Berhasil',
-            text: `Selamat bekerja! Anda absen pada ${now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`,
-            showConfirmButton: false,
-            timer: 1500
-          });
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Absensi Dibatalkan',
-            text: 'Anda membatalkan proses absensi.',
-            showConfirmButton: false,
-            timer: 1500
-          });
-        }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }); // Menggunakan kamera depan
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play(); // Pastikan video mulai diputar
+      }
+      setPhotoData(null); // Clear previous photo data when starting camera
+      setShowCameraStream(true);
     } catch (error) {
-        Swal.close();
-        Swal.fire({
-            icon: 'error',
-            title: 'Absensi Dibatalkan',
-            text: 'Gagal mendapatkan lokasi atau memproses foto, absensi dibatalkan.',
-            showConfirmButton: false,
-            timer: 2000
-        });
+      console.error('Error mengakses kamera:', error);
+      setAbsensiMessage({ type: 'error', text: 'Tidak dapat mengakses kamera. Berikan izin kamera.' });
+      setShowCameraStream(false);
     }
   };
 
-  const handleCheckOut = () => {
-    const now = new Date();
-    setCheckOutTime(now);
-    Swal.fire({
-      icon: 'info',
-      title: 'Check-out Berhasil',
-      text: `Terima kasih! Anda selesai bekerja pada ${now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`,
-      showConfirmButton: false,
-      timer: 1500
-    });
+  // Fungsi untuk mengambil foto dari kamera
+  const takePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      const context = canvas.getContext('2d');
+      
+      // Pastikan dimensi video valid, jika tidak, gunakan fallback atau dimensi elemen video
+      const videoWidth = video.videoWidth > 0 ? video.videoWidth : video.clientWidth;
+      const videoHeight = video.videoHeight > 0 ? video.videoHeight : video.clientHeight;
+
+      canvas.width = videoWidth;
+      canvas.height = videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      const photoDataUrl = canvas.toDataURL('image/jpeg', 0.8); // Kompresi 80%
+      setPhotoData(photoDataUrl);
+      setShowCameraStream(false); // Sembunyikan stream kamera setelah foto diambil
+      setAbsensiMessage({ type: 'success', text: 'Foto berhasil diambil!' });
+      
+      // Hentikan stream kamera setelah foto diambil
+      const stream = video.srcObject;
+      if (stream) {
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+        video.srcObject = null; // Penting: hapus referensi stream dari video elemen
+      }
+    }
   };
 
-  const calculateWorkDuration = () => {
-    if (checkInTime && checkOutTime) {
-      const diffMs = checkOutTime.getTime() - checkInTime.getTime();
-      const diffHours = diffMs / (1000 * 60 * 60);
-      return diffHours.toFixed(1);
-    } else if (checkInTime) {
-      const diffMs = new Date().getTime() - checkInTime.getTime();
-      const diffHours = diffMs / (1000 * 60 * 60);
-      return diffHours.toFixed(1);
+  // Handler untuk memilih foto dari galeri
+  const handleFileChange = (e) => {
+    setAbsensiMessage({ type: '', text: '' }); // Clear previous messages
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoData(reader.result);
+        setShowCameraStream(false); // Pastikan stream kamera mati jika ada
+        setAbsensiMessage({ type: 'success', text: 'Foto berhasil dipilih dari galeri!' });
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setAbsensiMessage({ type: 'warning', text: 'Tidak ada foto yang dipilih.' });
     }
-    return '0';
   };
+
+  // Fungsi untuk menutup modal kamera/absensi dan mereset state terkait
+  const closeAbsensiModal = () => {
+    setShowAbsensiModal(false);
+    setShowCameraStream(false);
+    setLocationData({ latitude: null, longitude: null, address: '' });
+    setPhotoData(null);
+    setAbsensiMessage({ type: '', text: '' }); // Clear messages on close
+    // Hentikan stream kamera jika masih aktif
+    const stream = videoRef.current?.srcObject;
+    if (stream) {
+      const tracks = stream.getTracks();
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null; // Penting: hapus referensi stream dari video elemen
+    }
+  };
+
+  // Handler submit absensi dari modal kustom
+  const handleSubmitAbsensi = async () => {
+    setAbsensiMessage({ type: '', text: '' }); // Clear previous messages
+
+    if (!locationData.latitude || !locationData.longitude) {
+      setAbsensiMessage({ type: 'error', text: 'Lokasi diperlukan. Silakan dapatkan lokasi Anda.' });
+      return;
+    }
+    if (!photoData) {
+      setAbsensiMessage({ type: 'error', text: 'Foto diperlukan. Silakan ambil atau pilih foto.' });
+      return;
+    }
+
+    setAbsensiMessage({ type: 'info', text: 'Mengirim absensi...' });
+
+    try {
+      const response = await checkIn(
+        { latitude: locationData.latitude, longitude: locationData.longitude, address: locationData.address },
+        photoData
+      );
+
+      if (response.success) {
+        const now = new Date();
+        setIsCheckedIn(true);
+        setCheckInTime(now);
+        setAbsensiMessage({ type: 'success', text: 'Absensi berhasil dikirim!' });
+        // Refresh riwayat absensi setelah berhasil submit
+        const updatedHistoryResponse = await getAttendanceHistory();
+        if (updatedHistoryResponse.success) {
+          const sortedHistory = updatedHistoryResponse.data.sort((a, b) => new Date(b.tanggal_absen) - new Date(a.tanggal_absen));
+          setAttendanceHistory(sortedHistory.slice(0, 7));
+        }
+        // Optionally close modal after a short delay for user to see success message
+        setTimeout(() => {
+          closeAbsensiModal();
+        }, 1500);
+      } else {
+        setAbsensiMessage({ type: 'error', text: response.message || 'Terjadi kesalahan saat mengirim absensi.' });
+      }
+    } catch (error) {
+      console.error("Error submitting attendance:", error);
+      setAbsensiMessage({ type: 'error', text: 'Error jaringan. Tidak dapat terhubung ke server.' });
+    }
+  };
+
+  // Fungsi untuk menghitung durasi kerja dari waktu check-in dan check-out
+  const calculateDuration = (checkInStr, checkOutStr) => {
+    if (!checkInStr || !checkOutStr) return '0 Jam';
+
+    try {
+      const [inHours, inMinutes, inSeconds] = checkInStr.split(':').map(Number);
+      const [outHours, outMinutes, outSeconds] = checkOutStr.split(':').map(Number);
+
+      const checkInDate = new Date();
+      checkInDate.setHours(inHours, inMinutes, inSeconds, 0);
+
+      const checkOutDate = new Date();
+      checkOutDate.setHours(outHours, outMinutes, outSeconds, 0);
+
+      // Handle case where checkout is on the next day (e.g., check-in 23:00, check-out 01:00)
+      if (checkOutDate < checkInDate) {
+        checkOutDate.setDate(checkOutDate.getDate() + 1);
+      }
+
+      const diffMs = checkOutDate.getTime() - checkInDate.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
+      return `${diffHours.toFixed(1)} Jam`;
+    } catch (e) {
+      console.error("Error calculating duration:", e);
+      return 'N/A';
+    }
+  };
+
+  // Fungsi untuk memformat tanggal agar mudah dibaca
+  const formatDisplayDate = (isoDateString) => {
+    if (!isoDateString) return '-';
+    const date = new Date(isoDateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Hari Ini';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Kemarin';
+    } else {
+      return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+  };
+
 
   const handleTambahkanKunjungan = () => {
     navigate('/sales/kunjungan');
@@ -416,7 +317,8 @@ const SalesDashboard = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Jam Kerja Hari Ini</p>
               <p className="text-2xl font-bold text-blue-600 mt-1">
-                {calculateWorkDuration()} Jam
+                {/* Menampilkan jam kerja hari ini dari checkInTime jika sudah absen */}
+                {isCheckedIn && checkInTime ? calculateDuration(checkInTime.toLocaleTimeString('en-US', { hour12: false }), new Date().toLocaleTimeString('en-US', { hour12: false })) : '0 Jam'}
               </p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
@@ -454,19 +356,18 @@ const SalesDashboard = () => {
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-3">
-            {/* Hanya tampilkan tombol Absen Sekarang atau Sudah Absen */}
             <button
-              onClick={handleCheckIn}
+              onClick={() => setShowAbsensiModal(true)} // Membuka modal kustom
               className={`w-full flex items-center justify-center px-4 py-3 rounded-lg transition-colors
                           ${
-                            isCheckedIn && checkInTime
+                            isCheckedIn
                               ? 'bg-gray-400 cursor-not-allowed'
                               : 'bg-green-600 hover:bg-green-700'
                           }
                           text-white`}
-              disabled={isCheckedIn && checkInTime}
+              disabled={isCheckedIn}
             >
-              {isCheckedIn && checkInTime ? (
+              {isCheckedIn ? (
                 <>
                   <CheckCircle className="w-5 h-5 mr-2" />
                   Sudah Absen
@@ -500,15 +401,16 @@ const SalesDashboard = () => {
                 <p className="text-sm font-semibold text-gray-900 mr-2">
                   {checkInTime ? checkInTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                 </p>
+                {/* Tombol MapPin di sini hanya untuk display, tidak memicu absen */}
                 <button
-                  onClick={getUserLocation}
+                  onClick={getCurrentLocation} // Ini hanya untuk demo menampilkan lokasi, tidak bagian dari alur absen
                   className="p-1 bg-blue-200 text-blue-800 rounded-full hover:bg-blue-300 transition-colors"
                   title="Dapatkan Lokasi Saat Ini"
                 >
                   <MapPin className="w-4 h-4" />
                 </button>
                 <p className="text-xs text-gray-500 ml-2">
-                  {latitude !== null && longitude !== null ? `Lat: ${latitude.toFixed(6)}, Long: ${longitude.toFixed(6)}` : userLocation}
+                  {locationData.address || 'Lokasi belum didapatkan'}
                 </p>
               </div>
             </div>
@@ -529,59 +431,189 @@ const SalesDashboard = () => {
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Riwayat Absensi 7 Hari Terakhir</h3>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Tanggal</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Check In</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Check Out</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Jam Kerja</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
+            <table className="w-full text-sm text-left text-gray-500">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-4 py-3">Tanggal</th>
+                  <th scope="col" className="px-4 py-3">Absen pada jam</th> {/* Mengubah label kolom */}
+                  <th scope="col" className="px-4 py-3">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                <tr>
-                  <td className="py-3 px-4 text-gray-900">Hari Ini</td>
-                  <td className="py-3 px-4 text-gray-900">{checkInTime ? checkInTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '--:--'}</td>
-                  <td className="py-3 px-4 text-gray-900">{checkOutTime ? checkOutTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '--:--'}</td>
-                  <td className="py-3 px-4 text-gray-900">{calculateWorkDuration()} Jam</td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      isCheckedIn ? (checkOutTime ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800') : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {isCheckedIn ? (checkOutTime ? 'Selesai' : 'Hadir (On-going)') : 'Belum Absen'}
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 text-gray-900">2 Agu 2025</td>
-                  <td className="py-3 px-4 text-gray-900">08:12</td>
-                  <td className="py-3 px-4 text-gray-900">17:30</td>
-                  <td className="py-3 px-4 text-gray-900">9.3 Jam</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                      Tepat Waktu
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 text-gray-900">1 Agu 2025</td>
-                  <td className="py-3 px-4 text-gray-900">08:45</td>
-                  <td className="py-3 px-4 text-gray-900">17:15</td>
-                  <td className="py-3 px-4 text-gray-900">8.5 Jam</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                      Terlambat
-                    </span>
-                  </td>
-                </tr>
+                {historyLoading ? (
+                  <tr>
+                    <td colSpan="3" className="px-4 py-4 text-center text-gray-500">Memuat riwayat absensi...</td>
+                  </tr>
+                ) : historyError ? (
+                  <tr>
+                    <td colSpan="3" className="px-4 py-4 text-center text-red-500">{historyError}</td>
+                  </tr>
+                ) : attendanceHistory.length > 0 ? (
+                  attendanceHistory.map((record, index) => (
+                    <tr key={index} className="bg-white hover:bg-gray-50">
+                      <td className="px-4 py-4 font-medium text-gray-900 whitespace-nowrap">
+                        {formatDisplayDate(record.tanggal_absen)}
+                      </td>
+                      <td className="px-4 py-4">{record.waktu_absen || '--:--'}</td>
+                      <td className="px-4 py-4">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          record.status_absen === 'Hadir' ? 'bg-green-100 text-green-800' :
+                          record.status_absen === 'Terlambat' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800' // Untuk status lain atau belum absen
+                        }`}>
+                          {record.status_absen || 'N/A'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" className="px-4 py-4 text-center text-gray-500">Tidak ada riwayat absensi.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
-      </DashboardLayout>
-    );
-  };
 
-  export default SalesDashboard;
+      {/* Custom Modal Absensi */}
+      {showAbsensiModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-md relative p-6">
+            <button
+              onClick={closeAbsensiModal}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+            >
+              <X size={24} />
+            </button>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">Absensi Check-In</h2>
+
+            <div className="space-y-5">
+              {/* Bagian Lokasi */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Lokasi Anda</label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    // Tampilkan Lat dan Long di input
+                    value={
+                      locationData.latitude !== null && locationData.longitude !== null
+                        ? `Lat: ${locationData.latitude.toFixed(6)}, Long: ${locationData.longitude.toFixed(6)}`
+                        : 'Lokasi belum didapatkan'
+                    }
+                    readOnly
+                    className="flex-grow px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                  />
+                  <button
+                    onClick={getCurrentLocation}
+                    disabled={isLoadingLocation}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                  >
+                    {isLoadingLocation ? (
+                      <RefreshCw size={16} className="animate-spin" />
+                    ) : (
+                      <>
+                        <MapPin size={16} className="mr-2" /> Dapatkan Lokasi
+                      </>
+                    )}
+                  </button>
+                </div>
+                {/* Hapus tag <p> yang menampilkan lat/long terpisah */}
+              </div>
+
+              {/* Bagian Foto */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Foto Selfie</label>
+                {photoData ? (
+                  <div className="relative mb-3">
+                    {/* Menggunakan elemen img untuk menampilkan foto */}
+                    <img src={photoData} alt="Selfie Absen" className="w-full h-48 object-cover rounded-lg" />
+                    <button
+                      onClick={() => setPhotoData(null)}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center">
+                    {showCameraStream ? (
+                      <div className="relative w-full h-full flex items-center justify-center">
+                        {/* Video feed kamera */}
+                        <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover rounded-lg" />
+                        <button
+                          onClick={takePhoto}
+                          className="absolute bottom-4 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg"
+                        >
+                          <Camera size={24} />
+                        </button>
+                        {/* Canvas tersembunyi untuk mengambil frame video */}
+                        <canvas ref={canvasRef} className="hidden" />
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center space-y-3">
+                        <button
+                          onClick={startCamera}
+                          className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                          <Camera size={20} className="mr-2" /> Ambil Foto Langsung
+                        </button>
+                        <span className="text-gray-500 text-sm">atau</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="hidden"
+                          id="gallery-upload"
+                        />
+                        <label
+                          htmlFor="gallery-upload"
+                          className="flex items-center px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors cursor-pointer"
+                        >
+                          <Image size={20} className="mr-2" /> Pilih dari Galeri
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Message Box */}
+              {absensiMessage.text && (
+                <div className={`p-3 rounded-lg text-sm ${
+                  absensiMessage.type === 'success' ? 'bg-green-100 text-green-800' :
+                  absensiMessage.type === 'error' ? 'bg-red-100 text-red-800' :
+                  'bg-blue-100 text-blue-800' // For 'info' or 'warning'
+                }`}>
+                  {absensiMessage.text}
+                </div>
+              )}
+
+              {/* Tombol Aksi */}
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={closeAbsensiModal}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmitAbsensi}
+                  disabled={!locationData.latitude || !photoData}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  Kirim Absensi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </DashboardLayout>
+  );
+};
+
+export default SalesDashboard;
