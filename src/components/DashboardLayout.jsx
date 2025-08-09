@@ -54,7 +54,6 @@ const DashboardLayout = ({ children }) => {
   } else if (userRole === 'sales') {
     navLinks.push(
       { to: '/sales/dashboard', label: 'Dashboard', icon: TrendingUp },
-      { to: '/sales/absensi', label: 'Absensi', icon: Calendar },
       { to: '/sales/teams', label: 'Tim Sales', icon: Users },
       { to: '/sales/kunjungan', label: 'Kunjungan', icon: MapPin }
     );
