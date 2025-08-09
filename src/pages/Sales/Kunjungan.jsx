@@ -157,18 +157,44 @@ const handleSuggestionClick = (outlet) => {
 
   const startCamera = async () => {
         try {
-            setShowCameraModal(true); // Tampilkan modal dulu
-            // Tunggu sesaat agar elemen video siap
+            // Dapatkan daftar semua perangkat video (kamera)
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+            // Cari kamera depan (selfie)
+            let selfieCamera = videoDevices.find(device => device.label.toLowerCase().includes('front'));
+
+            // Jika tidak ketemu dengan nama 'front', cari yang bukan 'back' sebagai cadangan
+            if (!selfieCamera && videoDevices.length > 1) {
+                selfieCamera = videoDevices.find(device => !device.label.toLowerCase().includes('back'));
+            }
+            
+            // Tentukan constraints berdasarkan kamera yang ditemukan
+            const constraints = {
+                video: {
+                    // Jika kamera selfie ditemukan, paksa gunakan deviceId-nya
+                    deviceId: selfieCamera ? { exact: selfieCamera.deviceId } : undefined,
+                    // Jika tidak, tetap coba minta kamera 'user' sebagai fallback
+                    facingMode: 'user'
+                }
+            };
+            
+            setShowCameraModal(true);
             setTimeout(async () => {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                 }
             }, 100);
+            
         } catch (error) {
             console.error('Error mengakses kamera:', error);
             setShowCameraModal(false);
-            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Tidak dapat mengakses kamera. Pastikan izin sudah diberikan.' });
+            Swal.fire({ 
+                icon: 'error', 
+                title: 'Kamera Gagal', 
+                text: 'Tidak dapat mengakses kamera selfie. Pastikan izin sudah diberikan dan tidak ada aplikasi lain yang sedang menggunakan kamera.' 
+            });
         }
     };
 
