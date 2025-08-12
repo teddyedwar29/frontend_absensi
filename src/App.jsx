@@ -8,6 +8,7 @@ import AdminTeamPage from './pages/Admin/TimSales.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import DashboardAdmin from './pages/Admin/Dashboard.jsx';
 import DashboardSales from './pages/Sales/Dashboard.jsx';
+import PageIzin from './pages/Admin/PageIzin.jsx'; // Impor halaman Izin
 
 import NotFoundPage from './pages/NotFoundPage.jsx'; // Nanti kita buat file ini
 import TrackingPage from "./pages/Admin/TrackingPage";
@@ -88,6 +89,16 @@ function App() {
           element={
             <ProtectedRoute requiredRole="admin">
               <AdminTeamPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Rute untuk halaman Izin */}
+        <Route 
+          path="/admin/PageIzin" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <PageIzin />
             </ProtectedRoute>
           }
         />

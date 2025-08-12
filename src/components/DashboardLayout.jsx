@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation  } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { Menu, X, LogOut, TrendingUp, Calendar, Users, MapPin, Bell, Settings, FileText } from 'lucide-react';
+import { Menu, X, LogOut, TrendingUp, Calendar, Users, MapPin, Bell, Settings, FileText, User } from 'lucide-react';
 import { logout } from '../api/auth';
 
 const DashboardLayout = ({ children }) => {
@@ -48,6 +48,7 @@ const DashboardLayout = ({ children }) => {
     navLinks.push(
       { to: '/admin/dashboard', label: 'Dashboard', icon: TrendingUp },
       { to: '/admin/teams', label: 'Tim Sales', icon: Users },
+      { to: '/admin/PageIzin', label: 'Cek Pengajuan Izin', icon: Users},
      { to: '#', label: 'Lokasi cabang kantor', icon: MapPin, isComingSoon: true },
     { to: '#', label: 'Laporan keuangan', icon: FileText, isComingSoon: true } // Ganti ikon Bell jadi FileText biar lebih cocok
    );

@@ -120,3 +120,21 @@ export const getTodayIzinStatus = async () => {
         };
     }
 };
+
+export const updateIzinStatus = async (izinId, newStatus) => {
+    try {
+        const payload = { status_izin: newStatus };
+        const response = await API.put(`/izin/${izinId}/${newStatus}`, payload);
+        return { 
+            success: true, 
+            data: response.data,
+            message: "Status izin berhasil diperbarui!"
+        };
+    } catch (error) {
+        console.error("Gagal memperbarui status izin:", error.response?.data);
+        return { 
+            success: false, 
+            message: error.response?.data?.msg || "Gagal memperbarui status izin." 
+        };
+    }
+}
