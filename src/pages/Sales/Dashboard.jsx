@@ -630,7 +630,7 @@ const AbsensiPage = () => {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             <FileText size={16} className="inline mr-2" />
-                            Keterangan (Opsional)
+                            Keterangan (wajib)
                         </label>
                         <textarea
                             value={izinKeterangan}
