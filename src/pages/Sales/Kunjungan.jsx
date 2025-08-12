@@ -6,6 +6,26 @@ import { MapPin, Camera, Plus, Search, Filter, CheckCircle, X, XCircle, RefreshC
 import Swal from 'sweetalert2';
 import API from '../../api/auth'; // Menggunakan instance API yang sudah terkonfigurasi
 
+ // Komponen Input Field untuk merapikan form
+    const InputField = ({ icon: Icon, label, name, ...props }) => (
+        <div>
+            <label className="block text-sm font-medium text-gray-700">{label}</label>
+            <div className="relative mt-1">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <Icon className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                    name={name}
+                     autoComplete="off"
+                     onInput={props.onChange} 
+                    {...props}
+                    className="block w-full rounded-md border-gray-300 pl-10 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                />
+            </div>
+        </div>
+    );
+
+    
 const KunjunganPage = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [visits, setVisits] = useState([]);
@@ -44,25 +64,7 @@ const KunjunganPage = () => {
     };
   const [formData, setFormData] = useState(initialFormData);
 
-     // Komponen Input Field untuk merapikan form
-    const InputField = ({ icon: Icon, label, name, ...props }) => (
-        <div>
-            <label className="block text-sm font-medium text-gray-700">{label}</label>
-            <div className="relative mt-1">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <Icon className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                    name={name}
-                     autoComplete="off"
-                     onInput={props.onChange} 
-                    {...props}
-                    className="block w-full rounded-md border-gray-300 pl-10 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                />
-            </div>
-        </div>
-    );
-
+    
      // Fungsi untuk mengambil data kunjungan dari backend
   const fetchVisits = async () => {
     try {
@@ -652,195 +654,6 @@ const filteredVisits = visits.filter(visit => {
               </div>
               
               <form onSubmit={handleSubmit}>
-                <div className="p-6 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">No. Kunjungan</label> {/* PERUBAHAN LABEL */}
-                      <input
-                        type="number"
-                        name="noVisit"
-                        value={formData.noVisit}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                        min="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Nama Outlet</label>
-                      <input
-                        type="text"
-                        name="outletName"
-                        value={formData.outletName}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Lokasi</label>
-                      <div className="flex items-center">
-                        <input
-                          type="text"
-                          name="lokasi"
-                          value={formData.lokasi}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          required
-                          readOnly
-                        />
-                        <button
-                          type="button"
-                          onClick={getCurrentLocation}
-                          disabled={isLoadingLocation}
-                          className="ml-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
-                        >
-                          {isLoadingLocation ? (
-                            <RefreshCw size={16} className="animate-spin" />
-                          ) : (
-                            <MapPin size={16} />
-                          )}
-                        </button>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {formData.lokasi ? 'Koordinat lokasi Anda saat ini.' : 'Dapatkan lokasi otomatis dengan GPS.'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Kegiatan</label>
-                      <select
-                        name="kegiatan"
-                        value={formData.kegiatan}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      >
-                        <option value="">Pilih Kegiatan</option>
-                        <option value="Akuisisi">Akuisisi</option>
-                        <option value="Follow Up">Follow Up</option>
-                        <option value="Maintenance">Maintenance</option>
-                        <option value="Training">Training</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Kompetitor</label>
-                      <input
-                        type="text"
-                        name="kompetitor"
-                        value={formData.kompetitor}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Rata-rata Top Up TekMo</label>
-                      <input
-                        type="number"
-                        name="rataTopUp"
-                        value={formData.rataTopUp}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="contoh: 100000"
-                        min="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Potensi Top Up Member</label>
-                      <input
-                        type="number"
-                        name="potensiTopUp"
-                        value={formData.potensiTopUp}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="contoh: 5000000"
-                        min="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">% Pemakaian TekMo</label>
-                      <input
-                        type="number"
-                        name="persentasePemakaian"
-                        value={formData.persentasePemakaian}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="contoh: 10"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Issue</label>
-                    <textarea
-                      name="issue"
-                      value={formData.issue}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Jelaskan issue atau catatan..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Foto Outlet</label>
-                    <div
-                      className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
-                      onClick={() => fileInputRef.current.click()}
-                    >
-                      {formData.foto ? (
-                        <img src={formData.foto} alt="Preview Outlet" className="max-h-48 w-full object-contain mx-auto mb-2" />
-                      ) : (
-                        <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      )}
-                      <p className="text-sm text-gray-500">
-                        {formData.foto ? 'Ganti Foto' : 'Klik untuk upload foto atau ambil foto'}
-                      </p>                      
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                      />
-                    </div>
-                    {formData.foto && (
-                      <div className="flex justify-center mt-2 space-x-2">
-                        <button
-                          type="button"
-                          onClick={startCamera}
-                          className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm flex items-center"
-                        >
-                          <Camera size={16} className="mr-1" /> Ambil Ulang Foto
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleRemovePhoto}
-                          className="px-3 py-1 bg-red-500 text-white rounded-lg text-sm flex items-center"
-                        >
-                          <Trash2 size={16} className="mr-1" /> Hapus Foto
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowAddForm(false)}
-                      className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
-                    >
-                      Simpan Kunjungan
-                    </button>
-                  </div>
-                </div>
-              </form>
                             <div className="p-6 space-y-6">
                                 {/* SEKSI 1: INFORMASI UTAMA */}
                                 <div className="border-b pb-6">

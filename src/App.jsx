@@ -17,6 +17,8 @@ import { isAuthenticated, getUserRole, logout } from './api/auth.js';
 import ProfilePage from './pages/Profilepage.jsx'; // Impor halaman profil
 // Impor ProtectedRoute yang lebih canggih untuk role-based access
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import ForgotPasswordPage from './pages/ForgotPasswordPage'; // Impor halaman baru
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 
 /**
@@ -52,6 +54,9 @@ function App() {
             isAuthenticated() ? <DashboardDispatcher /> : <LoginPage />
           } 
         />
+
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* --- Rute yang Dilindungi (Protected Routes) --- */}
 
