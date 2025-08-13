@@ -1,3 +1,5 @@
+
+
 // src/pages/sales/kunjungan.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -17,7 +19,7 @@ import API from '../../api/auth'; // Menggunakan instance API yang sudah terkonf
                 <input
                     name={name}
                      autoComplete="off"
-                     onInput={props.onChange} 
+                     onChange={props.onChange} 
                     {...props}
                     className="block w-full rounded-md border-gray-300 pl-10 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
