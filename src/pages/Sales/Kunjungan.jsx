@@ -6,28 +6,6 @@ import { MapPin, Camera, Plus, Search, Filter, CheckCircle, X, XCircle, RefreshC
 import Swal from 'sweetalert2';
 import API from '../../api/auth'; // Menggunakan instance API yang sudah terkonfigurasi
 
-<<<<<<< HEAD
-// Komponen Input Field dipindah keluar agar tidak kehilangan fokus
-const InputField = ({ icon: Icon, label, name, ...props }) => (
-    <div>
-        <label className="block text-sm font-medium text-gray-700">{label}</label>
-        <div className="relative mt-1">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <Icon className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-                name={name}
-                autoComplete="off"
-                {...props}
-                onChange={props.onChange}
-                className="block w-full rounded-md border-gray-300 pl-10 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            />
-        </div>
-    </div>
-);
-
-
-=======
  // Komponen Input Field untuk merapikan form
     const InputField = ({ icon: Icon, label, name, ...props }) => (
         <div>
@@ -48,7 +26,6 @@ const InputField = ({ icon: Icon, label, name, ...props }) => (
     );
 
     
->>>>>>> origin/aqil_frontend
 const KunjunganPage = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [visits, setVisits] = useState([]);
@@ -85,14 +62,10 @@ const KunjunganPage = () => {
         foto: null, 
         idMR: ''
     };
-<<<<<<< HEAD
-  const [formData, setFormData] = useState(initialFormData);// Fungsi untuk mengambil data kunjungan dari backend
-=======
   const [formData, setFormData] = useState(initialFormData);
 
     
      // Fungsi untuk mengambil data kunjungan dari backend
->>>>>>> origin/aqil_frontend
   const fetchVisits = async () => {
     try {
       setLoading(true);
@@ -295,7 +268,7 @@ const getCurrentLocation = () => {
 };
 
 
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Cek apakah outlet yang diinput ada di daftar (berdasarkan ID)
@@ -304,26 +277,14 @@ const handleSubmit = async (e) => {
     const proceedSubmit = async () => {
         try {
             const submitFormData = new FormData();
-            
             // Kirim semua data termasuk id_outlet dan nama_outlet
             Object.keys(formData).forEach(key => {
-                let backendKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-
-                // Mapping manual biar sesuai dengan kolom backend
-                if (key === 'rataTopUp') backendKey = 'rata_rata_topup';
-                if (key === 'potensiTopUp') backendKey = 'potensi_topup';
-                if (key === 'persentasePemakaian') backendKey = 'persentase_pemakaian';
-
-                if (key === 'outletName') {
-                    submitFormData.append('nama_outlet', formData[key]);
-                } else if (key === 'idOutlet') {
-                    submitFormData.append('id_outlet', formData[key]);
-                } else if (key !== 'foto') {
-                    submitFormData.append(backendKey, formData[key]);
-                }
+                const backendKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+                if (key === 'outletName') submitFormData.append('nama_outlet', formData[key]);
+                else if (key === 'idOutlet') submitFormData.append('id_outlet', formData[key]);
+                else if (key !== 'foto') submitFormData.append(backendKey, formData[key]);
             });
 
-            // Upload foto jika ada
             if (formData.foto) {
                 const response = await fetch(formData.foto);
                 const blob = await response.blob();
@@ -341,8 +302,10 @@ const handleSubmit = async (e) => {
     };
 
     if (isExistingOutlet || formData.idOutlet) {
+        // Jika outlet sudah ada (ID-nya terisi), langsung submit
         await proceedSubmit();
     } else {
+        // Jika outlet baru (ID-nya kosong), minta konfirmasi
         const result = await Swal.fire({
             title: 'Konfirmasi Outlet Baru',
             text: `Outlet "${formData.outletName}" tidak ada di daftar. Yakin ingin menambahkannya sebagai outlet baru?`,
@@ -356,7 +319,6 @@ const handleSubmit = async (e) => {
         }
     }
 };
-
   
   // Fungsi untuk mendapatkan string tanggal berdasarkan berapa hari yang lalu
   const getDateString = (daysAgo) => {
