@@ -8,6 +8,7 @@ import AdminTeamPage from './pages/Admin/TimSales.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import DashboardAdmin from './pages/Admin/Dashboard.jsx';
 import DashboardSales from './pages/Sales/Dashboard.jsx';
+import PageIzin from './pages/Admin/PageIzin.jsx'; // Impor halaman Izin
 
 import NotFoundPage from './pages/NotFoundPage.jsx'; // Nanti kita buat file ini
 import TrackingPage from "./pages/Admin/TrackingPage";
@@ -16,6 +17,8 @@ import { isAuthenticated, getUserRole, logout } from './api/auth.js';
 import ProfilePage from './pages/Profilepage.jsx'; // Impor halaman profil
 // Impor ProtectedRoute yang lebih canggih untuk role-based access
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import ForgotPasswordPage from './pages/ForgotPasswordPage'; // Impor halaman baru
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 
 /**
@@ -51,6 +54,9 @@ function App() {
             isAuthenticated() ? <DashboardDispatcher /> : <LoginPage />
           } 
         />
+
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* --- Rute yang Dilindungi (Protected Routes) --- */}
 
@@ -88,6 +94,16 @@ function App() {
           element={
             <ProtectedRoute requiredRole="admin">
               <AdminTeamPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Rute untuk halaman Izin */}
+        <Route 
+          path="/admin/PageIzin" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <PageIzin />
             </ProtectedRoute>
           }
         />

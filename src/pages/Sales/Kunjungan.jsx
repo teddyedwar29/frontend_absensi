@@ -6,6 +6,7 @@ import { MapPin, Camera, Plus, Search, Filter, CheckCircle, X, XCircle, RefreshC
 import Swal from 'sweetalert2';
 import API from '../../api/auth'; // Menggunakan instance API yang sudah terkonfigurasi
 
+<<<<<<< HEAD
 // Komponen Input Field dipindah keluar agar tidak kehilangan fokus
 const InputField = ({ icon: Icon, label, name, ...props }) => (
     <div>
@@ -26,6 +27,28 @@ const InputField = ({ icon: Icon, label, name, ...props }) => (
 );
 
 
+=======
+ // Komponen Input Field untuk merapikan form
+    const InputField = ({ icon: Icon, label, name, ...props }) => (
+        <div>
+            <label className="block text-sm font-medium text-gray-700">{label}</label>
+            <div className="relative mt-1">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <Icon className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                    name={name}
+                     autoComplete="off"
+                     onInput={props.onChange} 
+                    {...props}
+                    className="block w-full rounded-md border-gray-300 pl-10 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                />
+            </div>
+        </div>
+    );
+
+    
+>>>>>>> origin/aqil_frontend
 const KunjunganPage = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [visits, setVisits] = useState([]);
@@ -62,7 +85,14 @@ const KunjunganPage = () => {
         foto: null, 
         idMR: ''
     };
+<<<<<<< HEAD
   const [formData, setFormData] = useState(initialFormData);// Fungsi untuk mengambil data kunjungan dari backend
+=======
+  const [formData, setFormData] = useState(initialFormData);
+
+    
+     // Fungsi untuk mengambil data kunjungan dari backend
+>>>>>>> origin/aqil_frontend
   const fetchVisits = async () => {
     try {
       setLoading(true);
