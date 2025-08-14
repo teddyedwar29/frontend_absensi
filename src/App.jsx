@@ -1,25 +1,25 @@
 // src/App.jsx
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react'; // Menambahkan useState
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import AdminTeamPage from './pages/Admin/TimSales.jsx';
 
 // Impor semua halaman dan komponen yang dibutuhkan
+import AdminTeamPage from './pages/Admin/TimSales.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import DashboardAdmin from './pages/Admin/Dashboard.jsx';
 import DashboardSales from './pages/Sales/Dashboard.jsx';
-import PageIzin from './pages/Admin/PageIzin.jsx'; // Impor halaman Izin
-
-import NotFoundPage from './pages/NotFoundPage.jsx'; // Nanti kita buat file ini
+import PageIzin from './pages/Admin/PageIzin.jsx';
+import NotFoundPage from './pages/NotFoundPage.jsx';
 import TrackingPage from "./pages/Admin/TrackingPage";
 import KunjunganPage from './pages/Sales/Kunjungan.jsx';
 import { isAuthenticated, getUserRole, logout } from './api/auth.js';
-import ProfilePage from './pages/Profilepage.jsx'; // Impor halaman profil
-// Impor ProtectedRoute yang lebih canggih untuk role-based access
+import ProfilePage from './pages/Profilepage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
-import ForgotPasswordPage from './pages/ForgotPasswordPage'; // Impor halaman baru
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
+// Durasi timeout sesi dalam menit
+const SESSION_TIMEOUT_MINUTES = 1; // Diatur ke 1 menit untuk pengujian
 
 /**
  * DashboardDispatcher
@@ -43,6 +43,96 @@ const DashboardDispatcher = () => {
 
 
 function App() {
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(isAuthenticated()); // State baru untuk melacak status login
+  const timeoutId = useRef(null); // Menggunakan useRef untuk menyimpan ID timeout
+
+  // Fungsi untuk mereset timer logout
+  const resetTimeout = () => {
+    if (timeoutId.current) {
+      clearTimeout(timeoutId.current);
+    }
+    
+    if (isUserLoggedIn) { // Menggunakan state isUserLoggedIn
+      console.log("Aktivitas terdeteksi, mereset timer...");
+      timeoutId.current = setTimeout(() => {
+        console.log(`Sesi berakhir setelah ${SESSION_TIMEOUT_MINUTES} menit tidak aktif. Melakukan logout.`);
+        logout(); // Panggil fungsi logout jika timer habis
+      }, SESSION_TIMEOUT_MINUTES * 60 * 1000);
+      console.log(`Timer logout baru diatur untuk ${SESSION_TIMEOUT_MINUTES} menit.`);
+    } else {
+      console.log("Pengguna tidak terautentikasi, timer logout tidak diatur.");
+      // Pastikan tidak ada timer yang berjalan jika tidak terautentikasi
+      if (timeoutId.current) {
+        clearTimeout(timeoutId.current);
+      }
+    }
+  };
+
+  // Fungsi untuk mengatur event listener aktivitas pengguna
+  const setupActivityListeners = () => {
+    window.addEventListener('mousemove', resetTimeout);
+    window.addEventListener('keydown', resetTimeout);
+    window.addEventListener('click', resetTimeout);
+    window.addEventListener('scroll', resetTimeout);
+    console.log("Event listeners aktivitas diatur.");
+  };
+
+  // Fungsi untuk membersihkan event listener
+  const cleanupActivityListeners = () => {
+    window.removeEventListener('mousemove', resetTimeout);
+    window.removeEventListener('keydown', resetTimeout);
+    window.removeEventListener('click', resetTimeout);
+    window.removeEventListener('scroll', resetTimeout);
+    console.log("Event listeners aktivitas dibersihkan.");
+  };
+
+  // Efek untuk mengelola timer dan event listener saat komponen mount/unmount
+  useEffect(() => {
+    console.log("App.jsx useEffect running. isUserLoggedIn:", isUserLoggedIn); // Log state baru
+    // Initial setup based on current auth status
+    if (isUserLoggedIn) { // Menggunakan state isUserLoggedIn
+      setupActivityListeners();
+      resetTimeout();
+    } else {
+      // If not authenticated on mount, ensure no listeners are active
+      cleanupActivityListeners();
+      if (timeoutId.current) {
+        clearTimeout(timeoutId.current);
+      }
+    }
+
+    // Cleanup function: membersihkan timer dan event listener saat komponen di-unmount
+    return () => {
+      console.log("App.jsx unmounted. Membersihkan timer dan listeners.");
+      if (timeoutId.current) {
+        clearTimeout(timeoutId.current);
+      }
+      cleanupActivityListeners();
+    };
+  }, [isUserLoggedIn]); // Dependensi pada state isUserLoggedIn
+
+  // Efek untuk memperbarui state isUserLoggedIn setiap kali isAuthenticated() berubah
+  useEffect(() => {
+    const handleAuthStatusChange = () => { // Fungsi handler untuk custom event
+      const currentAuthStatus = isAuthenticated();
+      if (currentAuthStatus !== isUserLoggedIn) {
+        setIsUserLoggedIn(currentAuthStatus);
+        console.log("Auth status changed via custom event, updating isUserLoggedIn state.");
+      }
+    };
+
+    // Panggil saat mount untuk inisialisasi
+    handleAuthStatusChange();
+
+    // Mendengarkan custom event 'authStatusChanged'
+    window.addEventListener('authStatusChanged', handleAuthStatusChange);
+
+    return () => {
+      window.removeEventListener('authStatusChanged', handleAuthStatusChange);
+    };
+  }, [isUserLoggedIn]); // Dependensi pada isUserLoggedIn untuk memastikan listener terpasang dengan benar
+
+
   return (
     <Router>
       <Routes>
@@ -51,7 +141,7 @@ function App() {
         <Route 
           path="/" 
           element={
-            isAuthenticated() ? <DashboardDispatcher /> : <LoginPage />
+            isUserLoggedIn ? <DashboardDispatcher /> : <LoginPage /> // Menggunakan state isUserLoggedIn
           } 
         />
 
@@ -115,17 +205,6 @@ function App() {
             // ProtectedRoute kini memeriksa token DAN role yang diperlukan
             <ProtectedRoute requiredRole="sales">
               <DashboardSales />
-            </ProtectedRoute>
-          } 
-        />
-
-
-     {/* rute untuk halaman Profil */}
-      <Route 
-          path="/profile" 
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
             </ProtectedRoute>
           } 
         />
