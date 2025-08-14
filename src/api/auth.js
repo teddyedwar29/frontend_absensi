@@ -1,5 +1,4 @@
-// src/api/auth.js
-
+// src/api/auth.js (Perubahan pada file ini)
 import axios from "axios";
 
 const API = axios.create({
@@ -8,7 +7,8 @@ const API = axios.create({
 
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    // Mengambil token dari sessionStorage
+    const token = sessionStorage.getItem("token"); // PERUBAHAN: dari localStorage ke sessionStorage
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -22,10 +22,13 @@ export const login = async (username, password) => {
     const response = await API.post("/login", { username, password });
     const { access_token, role, username: returnedUsername } = response.data;
 
-    // Simpan semua data yang dibutuhkan
-    localStorage.setItem("token", access_token);
-    localStorage.setItem("userRole", role);
-    localStorage.setItem("username", returnedUsername);
+    // Simpan semua data yang dibutuhkan di sessionStorage
+    sessionStorage.setItem("token", access_token); // PERUBAHAN: dari localStorage ke sessionStorage
+    sessionStorage.setItem("userRole", role);     // PERUBAHAN: dari localStorage ke sessionStorage
+    sessionStorage.setItem("username", returnedUsername); // PERUBAHAN: dari localStorage ke sessionStorage
+
+    // Setelah berhasil login dan menyimpan token, kirim custom event
+    window.dispatchEvent(new Event('authStatusChanged'));
 
     return { success: true };
   } catch (error) {
@@ -37,13 +40,19 @@ export const login = async (username, password) => {
 };
 
 export const logout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("userRole");
-  localStorage.removeItem("username");
+  // Hapus semua data dari sessionStorage
+  sessionStorage.removeItem("token");      // PERUBAHAN: dari localStorage ke sessionStorage
+  sessionStorage.removeItem("userRole");  // PERUBAHAN: dari localStorage ke sessionStorage
+  sessionStorage.removeItem("username");  // PERUBAHAN: dari localStorage ke sessionStorage
+  
+  // Setelah logout, kirim custom event juga
+  window.dispatchEvent(new Event('authStatusChanged'));
+  
   window.location.href = "/"; 
 };
 
-export const isAuthenticated = () => !!localStorage.getItem("token");
-export const getUserRole = () => localStorage.getItem("userRole");
+// Mengambil status autentikasi dari sessionStorage
+export const isAuthenticated = () => !!sessionStorage.getItem("token"); // PERUBAHAN: dari localStorage ke sessionStorage
+export const getUserRole = () => sessionStorage.getItem("userRole");     // PERUBAHAN: dari localStorage ke sessionStorage
 
 export default API;
