@@ -1,6 +1,6 @@
 // src/App.jsx
 
-import React, { useEffect, useRef, useState } from 'react'; // Menambahkan useState
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Impor semua halaman dan komponen yang dibutuhkan
@@ -12,19 +12,18 @@ import PageIzin from './pages/Admin/PageIzin.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import TrackingPage from "./pages/Admin/TrackingPage";
 import KunjunganPage from './pages/Sales/Kunjungan.jsx';
-import { isAuthenticated, getUserRole, logout } from './api/auth.js';
+import { isAuthenticated, getUserRole, logout, login } from './api/auth.js';
 import ProfilePage from './pages/Profilepage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import Swal from 'sweetalert2';
 
 // Durasi timeout sesi dalam menit
-const SESSION_TIMEOUT_MINUTES = 1; // Diatur ke 1 menit untuk pengujian
+const SESSION_TIMEOUT_MINUTES = 1;
 
 /**
  * DashboardDispatcher
- * Komponen ini berfungsi sebagai 'gerbang' utama setelah login.
- * Tugasnya adalah memeriksa role pengguna dan mengarahkan ke dashboard yang sesuai.
  */
 const DashboardDispatcher = () => {
   const role = getUserRole();
@@ -37,120 +36,197 @@ const DashboardDispatcher = () => {
     return <Navigate to="/sales/dashboard" />;
   }
 
-  // Jika tidak ada role atau role tidak dikenal, kembalikan ke login
   return <Navigate to="/" />; 
 };
 
-
 function App() {
-  const [isUserLoggedIn, setIsUserLoggedIn] = useState(isAuthenticated()); // State baru untuk melacak status login
-  const timeoutId = useRef(null); // Menggunakan useRef untuk menyimpan ID timeout
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(isAuthenticated());
+  const [userRole, setUserRole] = useState(null);
+  const timeoutId = useRef(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const listenersSetup = useRef(false); // Track apakah listeners sudah di-setup
 
-  // Fungsi untuk mereset timer logout
-  const resetTimeout = () => {
+  // Ambil role user dari localStorage saat pertama kali render
+  useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    setUserRole(role);
+  }, []);
+
+  // 🔧 FUNGSI LOGOUT YANG PROPER
+  const handleAutoLogout = useCallback(async () => {
+    if (isLoggingOut) return;
+    
+    console.log('🔐 Auto logout triggered');
+    setIsLoggingOut(true);
+    
+    try {
+      // Clear timer
+      if (timeoutId.current) {
+        clearTimeout(timeoutId.current);
+        timeoutId.current = null;
+      }
+
+      // Clear listeners flag
+      listenersSetup.current = false;
+
+      // Show notification
+      await Swal.fire({
+        title: 'Sesi Berakhir',
+        text: 'Anda tidak aktif selama 1 menit. Sesi akan berakhir.',
+        icon: 'warning',
+        confirmButtonText: 'OK',
+        allowOutsideClick: false,
+        allowEscapeKey: false
+      });
+
+      // Clear auth data
+      logout();
+      
+      // Update state dengan sedikit delay untuk smooth transition
+      setTimeout(() => {
+        setIsUserLoggedIn(false);
+        setIsLoggingOut(false);
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error during auto logout:', error);
+      setIsLoggingOut(false);
+    }
+  }, [isLoggingOut]);
+
+  // 🔧 FUNGSI RESET TIMER DENGAN useCallback
+  const resetTimeout = useCallback(() => {
+    if (isLoggingOut || !isUserLoggedIn) return;
+    
+    // Clear existing timer
     if (timeoutId.current) {
       clearTimeout(timeoutId.current);
     }
     
-    if (isUserLoggedIn) { // Menggunakan state isUserLoggedIn
-      console.log("Aktivitas terdeteksi, mereset timer...");
-      timeoutId.current = setTimeout(() => {
-        console.log(`Sesi berakhir setelah ${SESSION_TIMEOUT_MINUTES} menit tidak aktif. Melakukan logout.`);
-        logout(); // Panggil fungsi logout jika timer habis
-      }, SESSION_TIMEOUT_MINUTES * 60 * 1000);
-      console.log(`Timer logout baru diatur untuk ${SESSION_TIMEOUT_MINUTES} menit.`);
-    } else {
-      console.log("Pengguna tidak terautentikasi, timer logout tidak diatur.");
-      // Pastikan tidak ada timer yang berjalan jika tidak terautentikasi
-      if (timeoutId.current) {
-        clearTimeout(timeoutId.current);
-      }
+    // Set new timer
+    timeoutId.current = setTimeout(() => {
+      handleAutoLogout();
+    }, SESSION_TIMEOUT_MINUTES * 60 * 1000);
+    
+    // Only log occasionally to prevent spam
+    if (Math.random() < 0.01) { // 1% chance to log
+      console.log("Timer reset");
     }
-  };
+  }, [isLoggingOut, isUserLoggedIn, handleAutoLogout]);
 
-  // Fungsi untuk mengatur event listener aktivitas pengguna
-  const setupActivityListeners = () => {
-    window.addEventListener('mousemove', resetTimeout);
-    window.addEventListener('keydown', resetTimeout);
-    window.addEventListener('click', resetTimeout);
-    window.addEventListener('scroll', resetTimeout);
-    console.log("Event listeners aktivitas diatur.");
-  };
-
-  // Fungsi untuk membersihkan event listener
-  const cleanupActivityListeners = () => {
-    window.removeEventListener('mousemove', resetTimeout);
-    window.removeEventListener('keydown', resetTimeout);
-    window.removeEventListener('click', resetTimeout);
-    window.removeEventListener('scroll', resetTimeout);
-    console.log("Event listeners aktivitas dibersihkan.");
-  };
-
-  // Efek untuk mengelola timer dan event listener saat komponen mount/unmount
+  // 🔧 SETUP EVENT LISTENERS HANYA SEKALI
   useEffect(() => {
-    console.log("App.jsx useEffect running. isUserLoggedIn:", isUserLoggedIn); // Log state baru
-    // Initial setup based on current auth status
-    if (isUserLoggedIn) { // Menggunakan state isUserLoggedIn
-      setupActivityListeners();
-      resetTimeout();
-    } else {
-      // If not authenticated on mount, ensure no listeners are active
-      cleanupActivityListeners();
-      if (timeoutId.current) {
-        clearTimeout(timeoutId.current);
-      }
+    if (!isUserLoggedIn || isLoggingOut || listenersSetup.current) {
+      return;
     }
 
-    // Cleanup function: membersihkan timer dan event listener saat komponen di-unmount
+    console.log("Setting up activity listeners...");
+    
+    // Gunakan passive listeners untuk performa lebih baik
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+    
+    events.forEach(event => {
+      document.addEventListener(event, resetTimeout, { passive: true });
+    });
+    
+    listenersSetup.current = true;
+    
+    // Setup initial timer
+    resetTimeout();
+
+    // Cleanup function
     return () => {
-      console.log("App.jsx unmounted. Membersihkan timer dan listeners.");
+      console.log("Cleaning up activity listeners...");
+      
+      events.forEach(event => {
+        document.removeEventListener(event, resetTimeout);
+      });
+      
       if (timeoutId.current) {
         clearTimeout(timeoutId.current);
+        timeoutId.current = null;
       }
-      cleanupActivityListeners();
+      
+      listenersSetup.current = false;
     };
-  }, [isUserLoggedIn]); // Dependensi pada state isUserLoggedIn
+  }, [isUserLoggedIn, isLoggingOut, resetTimeout]);
 
-  // Efek untuk memperbarui state isUserLoggedIn setiap kali isAuthenticated() berubah
+  // 🔧 MONITOR AUTH STATUS CHANGES
   useEffect(() => {
-    const handleAuthStatusChange = () => { // Fungsi handler untuk custom event
+    const checkAuthStatus = () => {
+      if (isLoggingOut) return;
+      
       const currentAuthStatus = isAuthenticated();
+      
       if (currentAuthStatus !== isUserLoggedIn) {
+        console.log("Auth status changed:", currentAuthStatus);
         setIsUserLoggedIn(currentAuthStatus);
-        console.log("Auth status changed via custom event, updating isUserLoggedIn state.");
+        
+        // Clear timer if logging out
+        if (!currentAuthStatus && timeoutId.current) {
+          clearTimeout(timeoutId.current);
+          timeoutId.current = null;
+          listenersSetup.current = false;
+        }
       }
     };
 
-    // Panggil saat mount untuk inisialisasi
-    handleAuthStatusChange();
+    // Check on mount
+    checkAuthStatus();
 
-    // Mendengarkan custom event 'authStatusChanged'
-    window.addEventListener('authStatusChanged', handleAuthStatusChange);
+    // Listen for custom auth events
+    window.addEventListener('authStatusChanged', checkAuthStatus);
 
     return () => {
-      window.removeEventListener('authStatusChanged', handleAuthStatusChange);
+      window.removeEventListener('authStatusChanged', checkAuthStatus);
     };
-  }, [isUserLoggedIn]); // Dependensi pada isUserLoggedIn untuk memastikan listener terpasang dengan benar
+  }, [isUserLoggedIn, isLoggingOut]);
 
+  // 🔧 CLEANUP ON UNMOUNT
+  useEffect(() => {
+    return () => {
+      if (timeoutId.current) {
+        clearTimeout(timeoutId.current);
+      }
+    };
+  }, []);
+
+  // Don't render anything while logging out
+  if (isLoggingOut) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '18px',
+        backgroundColor: '#f5f5f5'
+      }}>
+        <div>
+          <div>Sedang logout...</div>
+          <div style={{ fontSize: '14px', marginTop: '10px', opacity: 0.7 }}>
+            Mohon tunggu sebentar
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Router>
       <Routes>
-        {/* Rute Halaman Login */}
-        {/* Jika user sudah login, langsung alihkan ke "gerbang" dashboard */}
+        {/* Login Route */}
         <Route 
           path="/" 
           element={
-            isUserLoggedIn ? <DashboardDispatcher /> : <LoginPage /> // Menggunakan state isUserLoggedIn
+            isUserLoggedIn ? <DashboardDispatcher /> : <LoginPage />
           } 
         />
 
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        {/* --- Rute yang Dilindungi (Protected Routes) --- */}
-
-        {/* Gerbang Utama: Meneruskan user ke dashboard yang sesuai berdasarkan role */}
+        {/* Protected Routes */}
         <Route 
           path="/dashboard" 
           element={
@@ -160,25 +236,25 @@ function App() {
           } 
         />
 
-        {/* Rute untuk Admin */}
+        {/* Admin Routes */}
         <Route 
           path="/admin/dashboard" 
           element={
-            // ProtectedRoute kini memeriksa token DAN role yang diperlukan
             <ProtectedRoute requiredRole="admin">
               <DashboardAdmin />
             </ProtectedRoute>
           } 
         />
-          {/* DAFTARKAN RUTE BARU DI SINI */}
-              <Route 
-              path="/admin/tracking/:username" 
-              element={
-              <ProtectedRoute>
+        
+        <Route 
+          path="/admin/tracking/:username" 
+          element={
+            <ProtectedRoute>
               <TrackingPage />
-              </ProtectedRoute>
-            } />
-        {/* Rute baru untuk Tim Sales (khusus Admin) */}
+            </ProtectedRoute>
+          } 
+        />
+        
         <Route
           path="/admin/teams"
           element={
@@ -188,7 +264,6 @@ function App() {
           }
         />
 
-        {/* Rute untuk halaman Izin */}
         <Route 
           path="/admin/PageIzin" 
           element={
@@ -198,18 +273,16 @@ function App() {
           }
         />
         
-        {/* Rute untuk Sales */}
+        {/* Sales Routes */}
         <Route 
           path="/sales/dashboard" 
           element={
-            // ProtectedRoute kini memeriksa token DAN role yang diperlukan
             <ProtectedRoute requiredRole="sales">
               <DashboardSales />
             </ProtectedRoute>
           } 
         />
 
-        {/* Rute Kunjungan untuk Sales */}
         <Route
           path="/sales/kunjungan"
           element={
@@ -218,11 +291,18 @@ function App() {
             </ProtectedRoute>
           } 
         />
-     
+
+        {/* Profile Route */}
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          } 
+        />
         
-        {/* Rute lain bisa ditambahkan di sini, misalnya halaman untuk Tim Sales atau Kunjungan */}
-        
-        {/* Catch-all Route: Menampilkan halaman 404 Not Found untuk rute yang tidak ada */}
+        {/* 404 Route */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
@@ -230,3 +310,15 @@ function App() {
 }
 
 export default App;
+
+// Setelah login sukses
+// localStorage.setItem('userRole', response.data.role);
+
+// Contoh di LoginPage.jsx
+// const handleLogin = async () => {
+//   const response = await loginAPI(email, password);
+//   if (response.success) {
+//     localStorage.setItem('userRole', response.data.role); // 'admin' atau 'sales'
+//     // ...lanjutkan proses login...
+//   }
+// };

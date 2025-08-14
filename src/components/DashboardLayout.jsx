@@ -13,7 +13,7 @@ const DashboardLayout = ({ children }) => {
   const userName = localStorage.getItem('username') || 'Pengguna';
 
   useEffect(() => {
-    const role = localStorage.getItem('userRole');
+    const role = sessionStorage.getItem('userRole');
     setUserRole(role);
   }, []);
 
