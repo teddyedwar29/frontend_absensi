@@ -84,7 +84,7 @@ export const getTodayAttendanceStatus = async () => {
         }
 
         const todayDateString = getTodayDateString();
-        console.log('Mencari data untuk tanggal:', todayDateString);
+        // console.log('Mencari data untuk tanggal:', todayDateString);
 
         const todayRecord = history.find(record => {
             // Handle berbagai format tanggal yang mungkin dari backend
@@ -100,11 +100,11 @@ export const getTodayAttendanceStatus = async () => {
                     record.tanggal;
             }
             
-            console.log(`Comparing: ${recordDate} === ${todayDateString}`);
+            // console.log(`Comparing: ${recordDate} === ${todayDateString}`);
             return recordDate === todayDateString;
         });
 
-        console.log('Today record found:', todayRecord);
+        // console.log('Today record found:', todayRecord);
 
         if (todayRecord) {
             return {

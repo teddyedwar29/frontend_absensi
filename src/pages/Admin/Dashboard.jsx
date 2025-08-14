@@ -199,12 +199,10 @@ useEffect(() => {
 function Modal({ open, onClose, children }) {
     if (!open) return null;
     return (
-    <div 
+        <div 
             onClick={onClose} 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            className="fixed inset-0 z-[1001] flex items-center justify-center bg-black/50 p-4"
         >
-        {/* // z-index di sini diatur sangat tinggi (1001) untuk memastikan selalu di atas peta */}
-        <div style={{ zIndex: 1001 }} className="fixed inset-0 flex items-center justify-center bg-black/50 p-4">
             <div 
                 onClick={(e) => e.stopPropagation()} 
                 className="bg-white rounded-xl shadow-lg max-w-lg w-full relative p-4 sm:p-6"
@@ -219,7 +217,6 @@ function Modal({ open, onClose, children }) {
                 {children}
             </div>
         </div>
-    </div>
     );
 }
 

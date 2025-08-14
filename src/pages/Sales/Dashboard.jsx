@@ -53,7 +53,7 @@ const AbsensiPage = () => {
         try {
             // Fetch attendance status
             const statusResponse = await getTodayAttendanceStatus();
-            console.log('Status response:', statusResponse);
+            // console.log('Status response:', statusResponse);
             
             if (statusResponse.success && statusResponse.data) {
                 if (statusResponse.data.status_absen && statusResponse.data.status_absen !== 'Belum Absen') {
@@ -125,7 +125,7 @@ const AbsensiPage = () => {
         try {
             // Cek status absensi terkini sebelum memulai proses
             const currentStatus = await getTodayAttendanceStatus();
-            console.log('Fresh status check:', currentStatus); // Debug log
+            console.log('Fresh status check:', 'cie ngapain kamu tu'); // Debug log
             
             if (currentStatus.success && currentStatus.data && 
                 currentStatus.data.status_absen && 
