@@ -118,8 +118,8 @@ useEffect(() => {
                     maintenance: userMaintenance, prospek: userProspek,
                     status: userStatus,
                     foto_path: salesData.absensi?.foto_path 
-                        //? `https://api.jam.teknomobileindonesia.my.id/static/uploads/${salesData.absensi.foto_path}` 
-                         ? `http://127.0.0.1:5000/static/uploads/${salesData.absensi.foto_path}` 
+                           ? `https://api.jam.teknomobileindonesia.my.id/static/uploads/${salesData.absensi.foto_path}` 
+                         //? `http://127.0.0.1:5000/static/uploads/${salesData.absensi.foto_path}` 
 
                         : null
                 });
