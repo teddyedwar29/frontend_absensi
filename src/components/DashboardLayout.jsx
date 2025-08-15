@@ -197,7 +197,7 @@ const DashboardLayout = ({ children }) => {
                   <Menu size={24} />
                 </button>
                 <h1 className="text-lg font-medium text-gray-800 hidden sm:block">Selamat datang bosku 😍</h1>
-                <h1 className="text-base font-medium text-gray-800 sm:hidden">Dashboard</h1>
+                <h1 className="text-base font-medium text-gray-800 sm:hidden">welcome bos</h1>
               </div>
               
               <div className="flex items-center space-x-4">
