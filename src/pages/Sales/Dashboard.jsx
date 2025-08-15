@@ -557,7 +557,13 @@ const AbsensiPage = () => {
                     <div className="text-center">
                         <h3 className="text-lg font-semibold mb-4">Ambil Foto Selfie</h3>
                         <div className="relative">
-                            <video ref={videoRef} autoPlay playsInline className="w-full h-64 object-cover rounded-lg bg-gray-200" />
+                            <video ref={videoRef}  autoPlay
+                            playsInline
+                            style={{
+                                transform: 'scaleX(-1)', // membalik horizontal (mirror)
+                                width: '100%',
+                                height: 'auto',
+                            }}className="w-full h-64 object-cover rounded-lg bg-gray-200" />
                             <canvas ref={canvasRef} className="hidden" />
                             <button 
                                 onClick={takePhoto} 

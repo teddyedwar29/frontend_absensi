@@ -798,7 +798,11 @@ const filteredVisits = visits.filter(visit => {
                             </button>
                         </div>
                         <div className="relative">
-                            <video ref={videoRef} autoPlay playsInline className="w-full h-64 object-cover rounded-lg bg-gray-200" />
+                            <video ref={videoRef} autoPlay playsInline style={{
+                                transform: 'scaleX(-1)', // membalik horizontal (mirror)
+                                width: '100%',
+                                height: 'auto',
+                            }}className="w-full h-64 object-cover rounded-lg bg-gray-200" />
                             <button
                                 onClick={takePhoto}
                                 className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full"
