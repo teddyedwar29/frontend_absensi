@@ -76,7 +76,7 @@ const AdminTimSales = () => {
             setShowAddModal(false);
             setNewSales({ name: '', username: '', email: '', telpon: '', lokasi: '' });
             
-            Swal.fire({ icon: 'success', title: 'Berhasil!', text: `Sales baru ditambahkan dengan password default '12345'.`, timer: 2500 });
+            Swal.fire({ icon: 'success', title: 'Berhasil!', text: `Sales baru ditambahkan dengan password default 'pass123'.`, timer: 2500 });
             fetchSalesTeam();
         } catch (error) {
             Swal.fire({ icon: 'error', title: 'Gagal', text: error.response?.data?.msg || 'Gagal menambah sales.' });
@@ -167,7 +167,7 @@ const AdminTimSales = () => {
                                 <label className="text-sm font-medium text-gray-700">Email</label>
                                 <div className="relative mt-1">
                                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                    <input type="email" className="w-full border rounded-lg pl-10 pr-3 py-2" placeholder="Contoh: jefriteguh@email.com" value={newSales.email} onChange={e => setNewSales({ ...newSales, email: e.target.value })} required />
+                                    <input type="email" className="w-full border rounded-lg pl-10 pr-3 py-2" placeholder="Opsional" value={newSales.email} onChange={e => setNewSales({ ...newSales, email: e.target.value })} />
                                 </div>
                             </div>
                              <div>

@@ -43,11 +43,17 @@ const LoginForm = () => {
 
   return (
     <div className="w-full max-w-sm">
-      {/* --- Header Form --- */}
-      <div className="text-center mb-10">
-        <Briefcase size={48} className="mx-auto text-blue-600 lg:hidden mb-4" /> {/* Ikon untuk mobile */}
-        <h2 className="text-3xl font-bold text-gray-800">Login Akun</h2>
-        <p className="text-gray-500 mt-2">Masukkan kredensial Anda untuk melanjutkan.</p>
+      {/* Header Form */}
+      <div className="flex flex-col items-center mb-10">
+        <img
+          src="/tekmo.svg"
+          alt="Tekmo logo in blue and white, centered above login form"
+          className="w-16 h-16 mb-4 block md:hidden"
+        />
+        <h2 className="text-3xl font-bold text-gray-800 text-center">Login Akun</h2>
+        <p className="text-gray-500 mt-2 text-center">
+          Masukkan kredensial Anda untuk melanjutkan.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

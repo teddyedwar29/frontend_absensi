@@ -28,7 +28,7 @@ export const login = async (username, password) => {
     sessionStorage.setItem("userRole", role);
     sessionStorage.setItem("username", returnedUsername);
 
-    console.log('Login berhasil, token dan data tersimpan');
+    // console.log('Login berhasil, token dan data tersimpan');
 
     // Setelah berhasil login dan menyimpan token, kirim custom event
     window.dispatchEvent(new Event('authStatusChanged'));
@@ -44,19 +44,19 @@ export const login = async (username, password) => {
 
 // 🔧 FUNGSI LOGOUT YANG DIPERBAIKI - TIDAK MELAKUKAN REDIRECT PAKSA
 export const logout = () => {
-  console.log('🔐 Logout function called');
+  console.log('🔐 hayo ngapain kamu');
   
   // Hapus semua data dari sessionStorage
   sessionStorage.removeItem("token");
   sessionStorage.removeItem("userRole");
   sessionStorage.removeItem("username");
   
-  console.log('🔐 Session data cleared');
+  console.log('🔐 cek cek nih ya kamu');
   
   // Setelah logout, kirim custom event
   window.dispatchEvent(new Event('authStatusChanged'));
   
-  console.log('🔐 Auth status changed event dispatched');
+  // console.log('🔐 Auth status changed event dispatched');
   
   // 🔧 PERBAIKAN UTAMA: JANGAN REDIRECT PAKSA DI SINI!
   // Biarkan App.jsx yang menangani redirect

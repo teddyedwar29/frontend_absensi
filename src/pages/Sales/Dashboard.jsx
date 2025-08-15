@@ -53,7 +53,7 @@ const AbsensiPage = () => {
         try {
             // Fetch attendance status
             const statusResponse = await getTodayAttendanceStatus();
-            console.log('Status response:', statusResponse);
+            // console.log('Status response:', statusResponse);
             
             if (statusResponse.success && statusResponse.data) {
                 if (statusResponse.data.status_absen && statusResponse.data.status_absen !== 'Belum Absen') {
@@ -125,7 +125,7 @@ const AbsensiPage = () => {
         try {
             // Cek status absensi terkini sebelum memulai proses
             const currentStatus = await getTodayAttendanceStatus();
-            console.log('Fresh status check:', currentStatus); // Debug log
+            console.log('Fresh status check:', 'cie ngapain kamu tu'); // Debug log
             
             if (currentStatus.success && currentStatus.data && 
                 currentStatus.data.status_absen && 
@@ -557,7 +557,13 @@ const AbsensiPage = () => {
                     <div className="text-center">
                         <h3 className="text-lg font-semibold mb-4">Ambil Foto Selfie</h3>
                         <div className="relative">
-                            <video ref={videoRef} autoPlay playsInline className="w-full h-64 object-cover rounded-lg bg-gray-200" />
+                            <video ref={videoRef}  autoPlay
+                            playsInline
+                            style={{
+                                transform: 'scaleX(-1)', // membalik horizontal (mirror)
+                                width: '100%',
+                                height: 'auto',
+                            }}className="w-full h-64 object-cover rounded-lg bg-gray-200" />
                             <canvas ref={canvasRef} className="hidden" />
                             <button 
                                 onClick={takePhoto} 
