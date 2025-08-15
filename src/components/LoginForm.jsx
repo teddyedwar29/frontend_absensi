@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../api/auth';
-import Swal from 'sweetalert2';
 import { User, KeyRound, LogIn, Briefcase } from 'lucide-react'; // Impor ikon
 import { Link } from 'react-router-dom';
 
@@ -17,6 +16,8 @@ const LoginForm = () => {
 
     const result = await login(username, password);
     setLoading(false);
+
+    const Swal = (await import('sweetalert2')).default;
 
     if (result.success) {
       // Tampilkan notifikasi sukses terlebih dahulu
