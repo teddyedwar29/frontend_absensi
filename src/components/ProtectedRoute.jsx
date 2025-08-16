@@ -1,9 +1,9 @@
 // src/components/ProtectedRoute.jsx
-import React, { Suspense } from 'react'; // 💡 Import Suspense di sini
+import React, { Suspense } from 'react';
 import { Navigate } from 'react-router-dom';
 import { isAuthenticated, getUserRole } from '../api/auth';
 
-const ProtectedRoute = ({ Component, requiredRole }) => { 
+const ProtectedRoute = ({ children, Component, requiredRole }) => { 
   if (!isAuthenticated()) {
     return <Navigate to="/" replace />;
   }
@@ -12,6 +12,8 @@ const ProtectedRoute = ({ Component, requiredRole }) => {
   if (requiredRole && userRole !== requiredRole) {
     return <Navigate to="/" replace />;
   }
+
+  const ComponentToRender = Component || (() => children);
 
   return (
     <Suspense fallback={
@@ -26,7 +28,7 @@ const ProtectedRoute = ({ Component, requiredRole }) => {
         Memuat...
       </div>
     }>
-      <Component />
+      <ComponentToRender />
     </Suspense>
   );
 };

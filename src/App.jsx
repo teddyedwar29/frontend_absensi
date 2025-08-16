@@ -37,7 +37,7 @@ function App() {
   const listenersSetup = useRef(false);
 
   useEffect(() => {
-    const role = sessionStorage.getItem('userRole');
+    const role = localStorage.getItem('userRole');
     setUserRole(role);
   }, []);
 
@@ -138,13 +138,6 @@ function App() {
       </div>
     );
   }
-
-  const DashboardDispatcher = () => {
-    const role = getUserRole();
-    if (role === 'admin') return <Navigate to="/admin/dashboard" />;
-    if (role === 'sales') return <Navigate to="/sales/dashboard" />;
-    return <Navigate to="/" />;
-  };
 
   return (
     <Router>
