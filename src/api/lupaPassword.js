@@ -4,7 +4,7 @@ import axios from "axios";
 export const lupaPassword = async (email) => {
     try {
         const response = await axios.post(
-            "http://127.0.0.1:5000/forgot-password", // endpoint sesuai backend Flask kamu
+            "http://127.0.0.1:5050/forgot-password", // endpoint sesuai backend Flask kamu
             //"https://api.jam.teknomobileindonesia.my.id/forgot-password", // endpoint sesuai backend Flask kamu
             { email }
         );
@@ -18,7 +18,7 @@ export const lupaPassword = async (email) => {
 export const resetPassword = async (token, newPassword) => {
     try {
         const response = await axios.post(
-            "http://127.0.0.1:5000/reset-password", // sesuaikan jika ada endpoint di backend
+            "http://127.0.0.1:5050/reset-password", // sesuaikan jika ada endpoint di backend
              //"https://api.jam.teknomobileindonesia.my.id/reset-password", // sesuaikan jika ada endpoint di backend
             { token: token,
               password: newPassword,}

@@ -5,9 +5,9 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import API from '../../api/auth';
 import Swal from 'sweetalert2';
-import { Search, Plus, MapPin, Phone, Mail, XCircle, CalendarDays, Clock, User, AtSign, KeyRound, Building } from 'lucide-react';
+import { Search, Plus, MapPin, Phone, Mail, XCircle, CalendarDays, Clock, User, AtSign, Building, KeyRound, Trash2 } from 'lucide-react';
 
-// Fungsi helper untuk format tanggal
+// Fungsi helper untuk format tanggal (TETAP SAMA)
 const formatDate = (isoString) => {
     if (!isoString) return 'Belum ada';
     return new Date(isoString).toLocaleDateString('id-ID', {
@@ -15,9 +15,10 @@ const formatDate = (isoString) => {
     });
 };
 
+// Menggunakan sessionStorage sesuai dengan file auth.js
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token"); 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -34,8 +35,14 @@ const AdminTimSales = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [showAddModal, setShowAddModal] = useState(false);
+    const [showModal, setShowModal] = useState(false);
     
+    const [modalMode, setModalMode] = useState('add');
+    const [selectedSales, setSelectedSales] = useState(null);
+    
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+
     const [newSales, setNewSales] = useState({
         name: '',
         username: '',
@@ -44,6 +51,60 @@ const AdminTimSales = () => {
         lokasi: ''
     });
 
+    const handleOpenAddModal = () => {
+        setModalMode('add');
+        setNewSales({ name: '', username: '', email: '', telpon: '', lokasi: '' });
+        setShowModal(true);
+    };
+
+    const handleOpenResetPasswordModal = (sales) => {
+        setModalMode('resetPassword');
+        setSelectedSales(sales);
+        setOldPassword('');
+        setNewPassword('');
+        setShowModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+        setSelectedSales(null);
+        setOldPassword('');
+        setNewPassword('');
+    };
+
+    const handleDeleteSales = (sales) => {
+        Swal.fire({
+            title: `Yakin ingin menghapus ${sales.name}?`,
+            text: "Data yang dihapus tidak dapat dikembalikan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, hapus!',
+            cancelButtonText: 'Batal'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    // --- PERBAIKAN ENDPOINT DELETE SESUAI SCREENSHOT ---
+                    await API.delete(`/admin/delete-user/${sales.username}`);
+                    // --- AKHIR PERBAIKAN ---
+                    Swal.fire(
+                        'Dihapus!',
+                        `Data ${sales.name} berhasil dihapus.`,
+                        'success'
+                    );
+                    fetchSalesTeam();
+                } catch (error) {
+                    Swal.fire(
+                        'Gagal!',
+                        error.response?.data?.msg || 'Gagal menghapus data sales.',
+                        'error'
+                    );
+                }
+            }
+        });
+    };
+    
     const fetchSalesTeam = async () => {
         try {
             setLoading(true);
@@ -67,19 +128,36 @@ const AdminTimSales = () => {
         const lokasi = sales.lokasi ? sales.lokasi.toLowerCase() : '';
         return name.includes(searchTerm.toLowerCase()) || lokasi.includes(searchTerm.toLowerCase());
     });
-
-    const handleAddSales = async (e) => {
+    
+    const handleAddSalesSubmit = async (e) => {
         e.preventDefault();
         try {
             await API.post('/register', { ...newSales, role: 'sales' });
-            
-            setShowAddModal(false);
-            setNewSales({ name: '', username: '', email: '', telpon: '', lokasi: '' });
-            
-            Swal.fire({ icon: 'success', title: 'Berhasil!', text: `Sales baru ditambahkan dengan password default 'pass123'.`, timer: 2500 });
+            handleCloseModal();
+            Swal.fire({ icon: 'success', title: 'Berhasil!', text: `Sales baru ditambahkan.`, timer: 2500 });
             fetchSalesTeam();
         } catch (error) {
             Swal.fire({ icon: 'error', title: 'Gagal', text: error.response?.data?.msg || 'Gagal menambah sales.' });
+        }
+    };
+
+    const handleResetPasswordSubmit = async (e) => {
+        e.preventDefault();
+        if (!oldPassword || !newPassword) {
+            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Password lama dan baru tidak boleh kosong.' });
+            return;
+        }
+        try {
+            // --- PERBAIKAN METHOD MENJADI PUT SESUAI SCREENSHOT ---
+            await API.put(`/update_password_by_sales/${selectedSales.username}`, { 
+                old_password: oldPassword, 
+                new_password: newPassword 
+            });
+            // --- AKHIR PERBAIKAN ---
+            handleCloseModal();
+            Swal.fire({ icon: 'success', title: 'Berhasil!', text: `Password untuk ${selectedSales.name} telah diubah.`, timer: 2500 });
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'Gagal', text: error.response?.data?.msg || 'Gagal mereset password.' });
         }
     };
 
@@ -96,7 +174,7 @@ const AdminTimSales = () => {
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                         <input type="text" placeholder="Cari nama atau lokasi..." className="w-full pl-10 pr-4 py-2 border rounded-lg" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     </div>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 flex-shrink-0" onClick={() => setShowAddModal(true)}>
+                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 flex-shrink-0" onClick={handleOpenAddModal}>
                         <Plus size={20} /> <span className="hidden sm:inline">Tambah Sales</span>
                     </button>
                 </div>
@@ -109,13 +187,23 @@ const AdminTimSales = () => {
                     {filteredSales.map((sales) => (
                         <div key={sales.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col">
                             <div className="p-6 flex-grow">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-lg font-bold">
-                                        {sales.name ? sales.name.charAt(0).toUpperCase() : "?"}
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-lg font-bold">
+                                            {sales.name ? sales.name.charAt(0).toUpperCase() : "?"}
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900">{sales.name}</h3>
+                                            <p className="text-sm text-gray-500">ID: {sales.username || '-'}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-semibold text-gray-900">{sales.name}</h3>
-                                        <p className="text-sm text-gray-500">ID: {sales.username || '-'}</p>
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => handleOpenResetPasswordModal(sales)} className="text-gray-400 hover:text-blue-600 transition-colors" title="Ubah Password">
+                                            <KeyRound size={18} />
+                                        </button>
+                                        <button onClick={() => handleDeleteSales(sales)} className="text-gray-400 hover:text-red-600 transition-colors" title="Hapus">
+                                            <Trash2 size={18} />
+                                        </button>
                                     </div>
                                 </div>
                                 <div className="space-y-2 text-sm text-gray-600">
@@ -138,55 +226,101 @@ const AdminTimSales = () => {
                 </div>
             )}
 
-            {/* --- MODAL BARU DENGAN DESAIN LEBIH BAIK --- */}
-            {showAddModal && (
+            {showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl p-6 sm:p-8 w-full max-w-md shadow-lg relative">
-                        <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-600" onClick={() => setShowAddModal(false)}><XCircle size={24} /></button>
-                        <div className="text-center mb-6">
-                            <h3 className="text-xl font-bold">Tambah Sales Baru</h3>
-                            <p className="text-sm text-gray-500">Password akan diatur default ke '12345'</p>
-                        </div>
-                        <form onSubmit={handleAddSales} className="space-y-4">
-                            {/* Input dengan Label dan Ikon */}
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Nama Lengkap</label>
-                                <div className="relative mt-1">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                    <input type="text" className="w-full border rounded-lg pl-10 pr-3 py-2" placeholder="Contoh: jefri teguh" value={newSales.name} onChange={e => setNewSales({ ...newSales, name: e.target.value })} required />
+                        <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-600" onClick={handleCloseModal}><XCircle size={24} /></button>
+                        
+                        {modalMode === 'add' && (
+                            <>
+                                <div className="text-center mb-6">
+                                    <h3 className="text-xl font-bold">Tambah Sales Baru</h3>
+                                    <p className="text-sm text-gray-500">Password akan diatur default ke '12345'</p>
                                 </div>
-                            </div>
-                             <div>
-                                <label className="text-sm font-medium text-gray-700">ID_MR</label>
-                                <div className="relative mt-1">
-                                    <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                    <input type="text" className="w-full border rounded-lg pl-10 pr-3 py-2" placeholder="Contoh: 0001" value={newSales.username} onChange={e => setNewSales({ ...newSales, username: e.target.value })} required />
+                                <form onSubmit={handleAddSalesSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700">Nama Lengkap</label>
+                                        <div className="relative mt-1">
+                                            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                            <input type="text" className="w-full border rounded-lg pl-10 pr-3 py-2" placeholder="Contoh: jefri teguh" value={newSales.name} onChange={e => setNewSales({ ...newSales, name: e.target.value })} required />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700">ID_MR</label>
+                                        <div className="relative mt-1">
+                                            <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                            <input type="text" className="w-full border rounded-lg pl-10 pr-3 py-2" placeholder="Contoh: 0001" value={newSales.username} onChange={e => setNewSales({ ...newSales, username: e.target.value })} required />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700">Email</label>
+                                        <div className="relative mt-1">
+                                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                            <input type="email" className="w-full border rounded-lg pl-10 pr-3 py-2" placeholder="Opsional" value={newSales.email} onChange={e => setNewSales({ ...newSales, email: e.target.value })} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700">Nomor Telepon</label>
+                                        <div className="relative mt-1">
+                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                            <input type="text" className="w-full border rounded-lg pl-10 pr-3 py-2" placeholder="Opsional" value={newSales.telpon} onChange={e => setNewSales({ ...newSales, telpon: e.target.value })} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700">Lokasi</label>
+                                        <div className="relative mt-1">
+                                            <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                            <input type="text" className="w-full border rounded-lg pl-10 pr-3 py-2" placeholder="Opsional" value={newSales.lokasi} onChange={e => setNewSales({ ...newSales, lokasi: e.target.value })} />
+                                        </div>
+                                    </div>
+                                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition-colors mt-6">Simpan</button>
+                                </form>
+                            </>
+                        )}
+
+                        {modalMode === 'resetPassword' && selectedSales && (
+                             <>
+                                <div className="text-center mb-6">
+                                    <h3 className="text-xl font-bold">Ubah Password</h3>
+                                    <p className="text-sm text-gray-500">Ubah password untuk <span className="font-semibold">{selectedSales.name}</span></p>
                                 </div>
-                            </div>
-                             <div>
-                                <label className="text-sm font-medium text-gray-700">Email</label>
-                                <div className="relative mt-1">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                    <input type="email" className="w-full border rounded-lg pl-10 pr-3 py-2" placeholder="Opsional" value={newSales.email} onChange={e => setNewSales({ ...newSales, email: e.target.value })} />
-                                </div>
-                            </div>
-                             <div>
-                                <label className="text-sm font-medium text-gray-700">Nomor Telepon</label>
-                                <div className="relative mt-1">
-                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                    <input type="text" className="w-full border rounded-lg pl-10 pr-3 py-2" placeholder="Opsional" value={newSales.telpon} onChange={e => setNewSales({ ...newSales, telpon: e.target.value })} />
-                                </div>
-                            </div>
-                             <div>
-                                <label className="text-sm font-medium text-gray-700">Lokasi</label>
-                                <div className="relative mt-1">
-                                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                    <input type="text" className="w-full border rounded-lg pl-10 pr-3 py-2" placeholder="Opsional" value={newSales.lokasi} onChange={e => setNewSales({ ...newSales, lokasi: e.target.value })} />
-                                </div>
-                            </div>
-                            
-                            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition-colors mt-6">Simpan</button>
-                        </form>
+                                <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700">Password Lama</label>
+                                        <div className="relative mt-1">
+                                            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                            <input 
+                                                type="password" 
+                                                className="w-full border rounded-lg pl-10 pr-3 py-2" 
+                                                placeholder="Masukkan password lama" 
+                                                value={oldPassword} 
+                                                onChange={e => setOldPassword(e.target.value)} 
+                                                required 
+                                                autoFocus
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700">Password Baru</label>
+                                        <div className="relative mt-1">
+                                            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                            <input 
+                                                type="password" 
+                                                className="w-full border rounded-lg pl-10 pr-3 py-2" 
+                                                placeholder="Masukkan password baru" 
+                                                value={newPassword} 
+                                                onChange={e => setNewPassword(e.target.value)} 
+                                                required 
+                                            />
+                                        </div>
+                                    </div>
+                                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition-colors mt-6">
+                                        Simpan Password Baru
+                                    </button>
+                                </form>
+                            </>
+                        )}
+
                     </div>
                 </div>
             )}
