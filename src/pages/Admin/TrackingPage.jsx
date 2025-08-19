@@ -32,6 +32,10 @@ const TrackingPage = () => {
     const mapRef = useRef(null);
     const markersRef = useRef({});
 
+    const formatNumber = (value) => {
+  if (!value) return "";
+  return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
     useEffect(() => {
         const fetchTrackingData = async () => {
             if (!username || !date) return;
@@ -164,9 +168,9 @@ const TrackingPage = () => {
                                         <span className="flex items-center gap-1.5 capitalize"><Building size={14} />{point.kegiatan}</span>
                                         <span className="flex items-center gap-1.5"><Activity size={14} />Kompetitor: {point.kompetitor || '-'}</span>
                                         <span className="flex items-center gap-1.5"><AlertTriangle size={14} />Issue: {point.issue || '-'}</span>
-                                        <span className="flex items-center gap-1.5"><BanknoteArrowUp  size={14} />potensi topup: {point.potensi_topup || '-'}</span>
-                                        <span className="flex items-center gap-1.5"><Percent  size={14} />presentase pemakaian: {point.presentase_pemakaian || '-'}</span>
-                                        <span className="flex items-center gap-1.5"><Banknote size={14} />rata-rata topup: {point.rata_rata_topup || '-'}</span>
+                                        <span className="flex items-center gap-1.5"><BanknoteArrowUp  size={14} />potensi topup: {formatNumber(point.potensi_topup || '-')}</span>
+                                        <span className="flex items-center gap-1.5"><Banknote size={14} />rata-rata topup: {formatNumber(point.rata_rata_topup || '-')}</span>
+                                        <span className="flex items-center gap-1.5"><Percent  size={14} />presentase pemakaian: {point.presentase_pemakaian !== null && point.presentase_pemakaian !== undefined ? `${point.presentase_pemakaian.toFixed(2)}%` : '-'}</span>
                                         
                                     </div>
                                 </div>

@@ -10,7 +10,7 @@ const DashboardLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [exportOpen, setExportOpen] = useState(false);
-  const userName = localStorage.getItem('username') || 'Pengguna';
+  const userName = sessionStorage.getItem('username') || 'Pengguna';
 
   useEffect(() => {
     setUserRole(sessionStorage.getItem('userRole'));
