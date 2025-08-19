@@ -57,9 +57,8 @@ const KunjunganPage = () => {
         lokasi: '', 
         kegiatan: '',
         kompetitor: '', 
-        rataTopUp: '', 
-        potensiTopUp: '',
-        persentasePemakaian: '', 
+        rata_rata_topup: '', 
+        potensi_topup: '', 
         issue: '', 
         foto: null, 
         idMR: ''
@@ -112,6 +111,30 @@ const KunjunganPage = () => {
     fetchOutlets(); // Panggil fungsinya
 
   }, []);
+
+
+  // helper buat format angka ke ribuan dengan titik
+const formatNumber = (value) => {
+  if (!value) return "";
+  return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
+// helper buat hapus titik (biar balik ke angka murni)
+const parseNumber = (value) => {
+  if (!value) return "";
+  return value.replace(/\./g, "");
+};
+
+// handle input change khusus number
+const handleNumberChange = (e) => {
+  const { name, value } = e.target;
+  const rawValue = parseNumber(value); // hapus titik
+  setFormData({
+    ...formData,
+    [name]: rawValue ? parseInt(rawValue, 10) : ""
+  });
+};
+
 
    const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -275,6 +298,8 @@ const getCurrentLocation = () => {
     
     // Cek apakah outlet yang diinput ada di daftar (berdasarkan ID)
     const isExistingOutlet = allOutlets.some(outlet => outlet.id === formData.idOutlet);
+    //cek apakah dia di bagian kategori memiliih prospek kalo iya jangan tampilkan
+    const isKategoricondition = formData.kegiatan.toLowerCase().includes('prospek');
 
     const proceedSubmit = async () => {
         try {
@@ -282,6 +307,14 @@ const getCurrentLocation = () => {
             // Kirim semua data termasuk id_outlet dan nama_outlet
             Object.keys(formData).forEach(key => {
                 const backendKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+                let value = formData[key];
+                // Skip kalau null/undefined/empty string
+                if (value === null || value === undefined || value === '') return;
+
+                // Pastikan angka dikonversi dengan benar
+                if (backendKey === 'potensi_topup' || backendKey === 'rata_rata_topup') {
+                  value = parseFloat(value) || 0;
+                }
                 if (key === 'outletName') submitFormData.append('nama_outlet', formData[key]);
                 else if (key === 'idOutlet') submitFormData.append('id_outlet', formData[key]);
                 else if (key !== 'foto') submitFormData.append(backendKey, formData[key]);
@@ -293,20 +326,25 @@ const getCurrentLocation = () => {
                 submitFormData.append('foto_kunjungan', blob, 'kunjungan_photo.jpeg');
             }
             
-            await API.post('/kunjungan', submitFormData, { headers: { 'Content-Type': 'multipart/form-data' } });
-            Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Kunjungan berhasil ditambahkan!', timer: 1500 });
-            setShowAddForm(false);
-            setFormData({ ...initialFormData, idMR: localStorage.getItem('username') || '' });
-            fetchVisits();
-        } catch(err) {
-            Swal.fire({ icon: 'error', title: 'Gagal', text: err.response?.data?.message || 'Gagal.' });
-        }
-    };
+           const res = await API.post('/kunjungan', submitFormData, { headers: { 'Content-Type': 'multipart/form-data' } });
+    console.log("Response berhasil:", res.data);
 
-    if (isExistingOutlet || formData.idOutlet) {
-        // Jika outlet sudah ada (ID-nya terisi), langsung submit
-        await proceedSubmit();
-    } else {
+    // refreshVisits();
+    Swal.fire({ icon: 'success', title: 'Berhasil', text: res.data?.message || 'Kunjungan berhasil ditambahkan!', timer: 1500 });
+    setShowAddForm(false);
+    setFormData({ ...initialFormData, idMR: localStorage.getItem('username') || '' });
+    fetchVisits();
+  } catch (err) {
+    console.error("Error detail:", err);
+    Swal.fire({ icon: 'error', title: 'Gagal', text: err.response?.data?.message || err.message || 'Gagal.' });
+  }
+    };
+    if (isKategoricondition === true) {
+      await proceedSubmit();
+    } else if (isExistingOutlet || formData.idOutlet) {
+       // Jika outlet sudah ada (ID-nya terisi), langsung submit
+       await proceedSubmit();
+      } else {
         // Jika outlet baru (ID-nya kosong), minta konfirmasi
         const result = await Swal.fire({
             title: 'Konfirmasi Outlet Baru',
@@ -320,6 +358,7 @@ const getCurrentLocation = () => {
             await proceedSubmit();
         }
     }
+  
 };
   
   // Fungsi untuk mendapatkan string tanggal berdasarkan berapa hari yang lalu
@@ -485,7 +524,7 @@ const filteredVisits = visits.filter(visit => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Rata-rata Harian</p>
-                <p className="text-2xl font-bold text-orange-600 mt-1">4.8</p>
+                <p className="text-2xl font-bold text-orange-600 mt-1">4.2</p>
               </div>
               <div className="p-3 bg-orange-100 rounded-full">
                 <TrendingUp className="w-6 h-6 text-orange-600" />
@@ -613,18 +652,21 @@ const filteredVisits = visits.filter(visit => {
                       </div>
                       <div>
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Rata-rata Top Up</p>
-                        <p className="text-sm font-medium text-gray-900">{visit.rata_rata_topup}</p>
+                        <p className="text-sm font-medium text-gray-900">{formatNumber(visit.rata_rata_topup)}</p>
                       </div>
                     </div>
 
                     <div className="space-y-3">
                       <div>
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Potensi Top Up</p>
-                        <p className="text-sm font-medium text-gray-900">{visit.potensi_topup}</p>
+                        <p className="text-sm font-medium text-gray-900">{formatNumber(visit.potensi_topup)}</p>
                       </div>
                       <div>
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">% Pemakaian TekMo</p>
-                        <p className="text-sm font-medium text-gray-900">{visit.persentase_pemakaian || '-'}</p>
+                        <p className="text-sm font-medium text-gray-900">{visit.presentase_pemakaian !== null && visit.presentase_pemakaian !== undefined 
+                          ? `${visit.presentase_pemakaian.toFixed(2)}%` 
+                          : '-'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -728,21 +770,33 @@ const filteredVisits = visits.filter(visit => {
                                                 placeholder="Jika ada"
                                             />
                                         </div>
-                                        <InputField
-                                            icon={DollarSign} label="Rata-rata Top Up" name="rataTopUp"
-                                            type="number" value={formData.rataTopUp} onChange={handleInputChange}
-                                            placeholder="cth: 100000"
-                                        />
-                                        <InputField
-                                            icon={DollarSign} label="Potensi Top Up" name="potensiTopUp"
-                                            type="number" value={formData.potensiTopUp} onChange={handleInputChange}
-                                            placeholder="cth: 5000000"
-                                        />
-                                        <InputField
+                                  <InputField
+                                                      icon={DollarSign}
+                                                      label="Rata-rata Top Up"
+                                                      name="rata_rata_topup"
+                                                      type="text"
+                                                      value={formatNumber(formData.rata_rata_topup)}
+                                                      onChange={handleNumberChange}
+                                                      placeholder="cth: 100.000"
+                                                    />
+
+                                                    <InputField
+                                                      icon={DollarSign}
+                                                      label="Potensi Top Up"
+                                                      name="potensi_topup"
+                                                      type="text"
+                                                      value={formatNumber(formData.potensi_topup)}
+                                                      onChange={handleNumberChange}
+                                                      placeholder="cth: 5.000.000"
+                                                    />
+
+                                       
+                                        {/* <InputField
                                             icon={Percent} label="% Pemakaian" name="persentasePemakaian"
                                             type="number" value={formData.persentasePemakaian} onChange={handleInputChange}
                                             placeholder="cth: 10"
-                                        />
+                                        /> */}
+                                      
                                         <div className="sm:col-span-2">
                                              <InputField
                                                 icon={MessageSquare} label="Issue" name="issue"
