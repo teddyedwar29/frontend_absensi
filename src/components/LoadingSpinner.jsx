@@ -39,7 +39,7 @@ const LoadingSpinner = ({
               </div>
               <div className="text-center">
                 <h3 className="text-xl font-semibold text-gray-800">Tekmo</h3>
-                <p className="text-sm text-gray-500">Sales Management System</p>
+                <p className="text-sm text-gray-500">Jurney Activity Marketing</p>
               </div>
             </div>
           )}
