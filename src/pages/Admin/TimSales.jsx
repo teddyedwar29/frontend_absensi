@@ -100,7 +100,7 @@ const AdminTimSales = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await API.delete(`/admin/delete-user/${sales.username}`);
+          await API.post(`/admin/delete-user/${sales.username}`);
           Swal.fire(
             "Dihapus!",
             `Data ${sales.name} berhasil dihapus.`,
@@ -180,7 +180,7 @@ const AdminTimSales = () => {
       return;
     }
     try {
-      await API.put(`/update_password_by_sales/${selectedSales.username}`, {
+      await API.post(`/update_password_by_sales/${selectedSales.username}`, {
         old_password: oldPassword,
         new_password: newPassword,
       });

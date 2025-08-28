@@ -165,6 +165,7 @@ useEffect(() => {
                             processedData[username] = {
                                 name: salesData.name,
                                 route: salesData.kunjungan.map(point => {
+                                     console.log(point);
                                     if (typeof point.lokasi_koordinat === 'string' && point.lokasi_koordinat.includes(',')) {
                                         const coords = point.lokasi_koordinat.split(',').map(Number);
                                         if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
@@ -376,6 +377,7 @@ function Modal({ open, onClose, children }) {
                                                                               {/* 2. Tampilkan sisa info seperti biasa */}
                                                                               <div className="flex-grow">
                                                                               <p className="font-bold text-base">{pointIndex + 1}. {point.nama_outlet}</p>
+                                                                              <p className="text-sm">sales: <span className="font-medium">{name}</span></p>
                                                                               <p className="text-sm">Waktu: <span className="font-medium">{point.waktu_kunjungan}</span></p>
                                                                               <p className="text-sm">Kegiatan: <span className="font-medium capitalize">{point.kegiatan}</span></p>
                                                                           </div>
