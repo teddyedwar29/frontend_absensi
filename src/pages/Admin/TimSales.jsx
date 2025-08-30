@@ -339,7 +339,7 @@ const AdminTimSales = () => {
                 <div className="text-center mb-6">
                   <h3 className="text-xl font-bold">Tambah Sales Baru</h3>
                   <p className="text-sm text-gray-500">
-                    Password akan diatur default ke '12345'
+                    Password akan diatur default ke 'pass123'
                   </p>
                 </div>
                 <form onSubmit={handleAddSalesSubmit} className="space-y-4">
