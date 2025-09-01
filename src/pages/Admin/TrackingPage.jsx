@@ -119,6 +119,12 @@ const TrackingPage = () => {
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                         
                         {routeData.map((point, index) => (
+                             console.log({
+                                    id: point.id,
+                                    foto: point.foto_kunjungan_path,
+                                    outlet: point.nama_outlet
+                                }),
+
                             // --- PERUBAHAN 5: Hubungkan ref ke setiap Marker ---
                             <Marker 
                                 key={point.id} 
@@ -140,7 +146,8 @@ const TrackingPage = () => {
                                     </div>
                                 </Popup>
                             </Marker>
-                        ))}
+                            )
+                        )}
 
                         {waypointPositions.length > 1 && <RoutingMachine waypoints={waypointPositions} />}
                     </MapContainer>

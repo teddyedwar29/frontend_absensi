@@ -407,9 +407,17 @@ const filteredVisits = visits.filter(visit => {
 });
 
   // Statistik sekarang berdasarkan finalFilteredVisits
-  const completedToday = finalFilteredVisits.length; // Menggunakan finalFilteredVisits
+  const completedToday = finalFilteredVisits.filter(
+  (visit) => visit.kegiatan.toLowerCase() !== "prospek"
+    ).length;
   const targetDaily = 5;
   const progressPercentage = (completedToday / targetDaily) * 100;
+
+
+  const TargetAkuisisiToday = finalFilteredVisits.filter(
+    (visit) => visit.kegiatan.toLowerCase() === "akuisisi"
+      ).length;
+      
 
   // Mendapatkan label hari untuk kartu statistik
   const getDayLabel = (daysAgo) => {
@@ -523,8 +531,8 @@ const filteredVisits = visits.filter(visit => {
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Rata-rata Harian</p>
-                <p className="text-2xl font-bold text-orange-600 mt-1">4.2</p>
+                <p className="text-sm font-medium text-gray-600">Target Akuisisi</p>
+                <p className="text-2xl font-bold text-orange-600 mt-1">{TargetAkuisisiToday}/2</p>
               </div>
               <div className="p-3 bg-orange-100 rounded-full">
                 <TrendingUp className="w-6 h-6 text-orange-600" />
