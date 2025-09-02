@@ -608,7 +608,7 @@ console.log("Upload foto untuk izin ID:", id, "File:", file);
 
                     {/* Kolom Aksi */}
                     <td className="px-4 py-4">
-                        {record.status_izin === 'pending' && (
+                        (
                         <>
                             <input
                             type="file"
@@ -624,7 +624,7 @@ console.log("Upload foto untuk izin ID:", id, "File:", file);
                             Upload Foto
                 </label>
               </>
-            )}
+            )
           </td>
         </tr>
       ))
