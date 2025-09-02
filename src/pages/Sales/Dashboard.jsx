@@ -2,17 +2,18 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { Clock, CheckCircle, LogIn, Camera, MapPin, RefreshCw, X, FileText, Calendar } from 'lucide-react';
+import { Clock, CheckCircle, LogIn, Camera, MapPin, RefreshCw, X, FileText, Calendar, Upload, Image } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { checkIn, isCheckedIn, getTodayAttendanceStatus, getAttendanceHistory } from '../../api/absensi';
 import { createIzin, getTodayIzinStatus, getIzinHistory } from '../../api/izin';
+import API from '../../api/auth';
 
 // Komponen Modal
 function Modal({ open, onClose, children }) {
     if (!open) return null;
     return (
         <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl shadow-lg w-full max-w-md relative p-6">
+            <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl shadow-lg w-full max-w-md relative p-6 max-h-[90vh] overflow-y-auto">
                 <button onClick={onClose} className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 z-10"><X size={24} /></button>
                 {children}
             </div>
@@ -37,6 +38,8 @@ const AbsensiPage = () => {
     const [izinDate, setIzinDate] = useState('');
     const [izinKeterangan, setIzinKeterangan] = useState('');
     const [izinSubmitting, setIzinSubmitting] = useState(false);
+    const [izinPhoto, setIzinPhoto] = useState(null); // State untuk foto izin
+    const [izinPhotoPreview, setIzinPhotoPreview] = useState(null); // Preview foto izin
 
     // State untuk riwayat
     const [attendanceHistory, setAttendanceHistory] = useState([]);
@@ -46,6 +49,7 @@ const AbsensiPage = () => {
 
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+    const izinFileInputRef = useRef(null); // Ref untuk input file izin
 
     // Fungsi untuk memuat semua data awal
     const fetchInitialData = async () => {
@@ -153,7 +157,7 @@ const AbsensiPage = () => {
                 return;
             }
 
-            // Tutup loading dan lanjutkan proses absensi
+            // Tutup loading dan lanjutkan proses
             Swal.close();
             
             // Jika belum absen, lanjutkan proses
@@ -267,13 +271,76 @@ const AbsensiPage = () => {
         handleCancel();
     };
 
-    // FUNGSI IZIN
+    // FUNGSI IZIN - DENGAN FITUR FOTO
     const handleOpenIzinModal = () => {
         // Set default date to today
         const today = new Date().toISOString().split('T')[0];
         setIzinDate(today);
         setIzinKeterangan('');
+        setIzinPhoto(null);
+        setIzinPhotoPreview(null);
         setShowIzinModal(true);
+    };
+
+    const handleUploadFoto = async (id, file) => {
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("foto_izin", file);
+        // Frontend
+console.log("Upload foto untuk izin ID:", id, "File:", file);
+
+  try {
+    const response = await API.put(`/izin-photo-update/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+
+    alert(response.data.msg || "Foto berhasil diupdate!");
+    // // Refresh riwayat biar update
+    // fetchIzinHistory();
+  } catch (error) {
+    console.error("Gagal upload foto izin:", error);
+    alert(error.response?.data?.msg || "Gagal upload foto izin");
+  }
+};
+
+
+    // Fungsi untuk handle upload foto izin
+    const handleIzinPhotoUpload = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            // Validasi tipe file
+            if (!file.type.startsWith('image/')) {
+                Swal.fire('Error', 'File harus berupa gambar!', 'error');
+                return;
+            }
+            
+            // Validasi ukuran file (maksimal 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire('Error', 'Ukuran file tidak boleh lebih dari 5MB!', 'error');
+                return;
+            }
+
+            // Simpan file object untuk pengiriman ke backend
+            setIzinPhoto(file);
+            
+            // Create preview URL
+            const previewUrl = URL.createObjectURL(file);
+            setIzinPhotoPreview(previewUrl);
+        }
+    };
+
+    // Fungsi untuk menghapus foto izin
+    const handleRemoveIzinPhoto = () => {
+        setIzinPhoto(null);
+        setIzinPhotoPreview(null);
+        if (izinFileInputRef.current) {
+            izinFileInputRef.current.value = '';
+        }
+        // Revoke object URL untuk mencegah memory leak
+        if (izinPhotoPreview && izinPhotoPreview.startsWith('blob:')) {
+            URL.revokeObjectURL(izinPhotoPreview);
+        }
     };
 
     const handleSubmitIzin = async () => {
@@ -282,10 +349,16 @@ const AbsensiPage = () => {
             return;
         }
 
+        if (!izinKeterangan.trim()) {
+            Swal.fire('Error', 'Keterangan izin harus diisi!', 'error');
+            return;
+        }
+
         setIzinSubmitting(true);
         try {
-            const result = await createIzin(izinDate, izinKeterangan);
-            
+            // Modifikasi pemanggilan API untuk menyertakan foto
+            const result = await createIzin(izinDate, izinKeterangan, izinPhoto);
+
             if (result.success) {
                 Swal.fire({
                     title: 'Berhasil! 📝',
@@ -308,9 +381,19 @@ const AbsensiPage = () => {
     };
 
     const handleCancelIzin = () => {
+        // Cleanup object URL untuk mencegah memory leak
+        if (izinPhotoPreview && izinPhotoPreview.startsWith('blob:')) {
+            URL.revokeObjectURL(izinPhotoPreview);
+        }
+        
         setShowIzinModal(false);
         setIzinDate('');
         setIzinKeterangan('');
+        setIzinPhoto(null);
+        setIzinPhotoPreview(null);
+        if (izinFileInputRef.current) {
+            izinFileInputRef.current.value = '';
+        }
     };
 
     const handleCancel = () => {
@@ -491,52 +574,69 @@ const AbsensiPage = () => {
                         </table>
                     ) : (
                         <table className="w-full text-sm text-left text-gray-500">
-                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
-                                <tr>
-                                    <th scope="col" className="px-4 py-3">Tanggal Izin</th>
-                                    <th scope="col" className="px-4 py-3">Keterangan</th>
-                                    <th scope="col" className="px-4 py-3">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {historyLoading ? (
-                                    <tr>
-                                        <td colSpan="3" className="text-center py-6">
-                                            <RefreshCw className="mx-auto animate-spin text-gray-400 mb-2" size={24} />
-                                            <p>Memuat riwayat...</p>
-                                        </td>
-                                    </tr>
-                                ) : izinHistory.length > 0 ? (
-                                    izinHistory.slice(0, 10).map((record) => (
-                                        <tr key={record.id} className="bg-white border-b hover:bg-gray-50 transition-colors">
-                                            <td className="px-4 py-4 font-medium text-gray-900">{formatDisplayDate(record.tanggal_izin)}</td>
-                                            <td className="px-4 py-4 max-w-xs">
-                                                <div className="truncate" title={record.keterangan || 'Tidak ada keterangan'}>
-                                                    {record.keterangan || 'Tidak ada keterangan'}
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                                    record.status_izin === 'approved' ? 'bg-green-100 text-green-800' :
-                                                    record.status_izin === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                    'bg-red-100 text-red-800'
-                                                }`}>
-                                                    {record.status_izin === 'approved' ? 'Disetujui' :
-                                                    record.status_izin === 'pending' ? 'Pending' :
-                                                    'Ditolak'}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="3" className="text-center py-6 text-gray-500">
-                                            Tidak ada riwayat izin.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+            <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
+                <tr>
+                <th scope="col" className="px-4 py-3">Tanggal Izin</th>
+                <th scope="col" className="px-4 py-3">Keterangan</th>
+                <th scope="col" className="px-4 py-3">Status</th>
+                <th scope="col" className="px-4 py-3">Aksi</th> {/* Kolom baru */}
+                </tr>
+            </thead>
+            <tbody>
+                {izinHistory.length > 0 ? (
+                izinHistory.slice(0, 10).map((record) => (
+                    <tr key={record.id} className="bg-white border-b hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-4 font-medium text-gray-900">
+                        {formatDisplayDate(record.tanggal_izin)}
+                    </td>
+                    <td className="px-4 py-4 max-w-xs">
+                        <div className="truncate" title={record.keterangan || 'Tidak ada keterangan'}>
+                        {record.keterangan || 'Tidak ada keterangan'}
+                        </div>
+                    </td>
+                    <td className="px-4 py-4">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        record.status_izin === 'approved' ? 'bg-green-100 text-green-800' :
+                        record.status_izin === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                        }`}>
+                        {record.status_izin === 'approved' ? 'Disetujui' :
+                        record.status_izin === 'pending' ? 'Pending' :
+                        'Ditolak'}
+                        </span>
+                    </td>
+
+                    {/* Kolom Aksi */}
+                    <td className="px-4 py-4">
+                        {record.status_izin === 'pending' && (
+                        <>
+                            <input
+                            type="file"
+                            accept="image/*"
+                            id={`foto-${record.id}`}
+                            className="hidden"
+                            onChange={(e) => handleUploadFoto(record.id, e.target.files[0])}
+                            />
+                            <label
+                            htmlFor={`foto-${record.id}`}
+                            className="cursor-pointer text-blue-600 hover:underline text-sm"
+                            >
+                            Upload Foto
+                </label>
+              </>
+            )}
+          </td>
+        </tr>
+      ))
+    ) : (
+      <tr>
+        <td colSpan="4" className="text-center py-6 text-gray-500">
+          Tidak ada riwayat izin.
+        </td>
+      </tr>
+    )}
+  </tbody>
+</table>
                     )}
                 </div>
             </div>
@@ -614,11 +714,11 @@ const AbsensiPage = () => {
                 )}
             </Modal>
 
-            {/* Modal Izin */}
+            {/* Modal Izin - DENGAN FITUR UPLOAD FOTO */}
             <Modal open={showIzinModal} onClose={handleCancelIzin}>
                 <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">Ajukan Izin</h2>
                 
-                <div className="space-y-4">
+                <div className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             <Calendar size={16} className="inline mr-2" />
@@ -646,6 +746,59 @@ const AbsensiPage = () => {
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
                         />
                     </div>
+
+                    {/* SECTION UPLOAD FOTO IZIN */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <Image size={16} className="inline mr-2" />
+                            Foto Pendukung (opsional)
+                        </label>
+                        
+                        {/* Upload Area */}
+                        {!izinPhotoPreview ? (
+                            <div 
+                                onClick={() => izinFileInputRef.current?.click()}
+                                className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition-colors"
+                            >
+                                <Upload size={32} className="text-gray-400 mb-2" />
+                                <p className="text-sm text-gray-500 text-center">
+                                    Klik untuk upload foto<br/>
+                                    <span className="text-xs text-gray-400">Format: JPG, PNG (max 5MB)</span>
+                                </p>
+                            </div>
+                        ) : (
+                            /* Preview Foto */
+                            <div className="relative">
+                                <img 
+                                    src={izinPhotoPreview} 
+                                    alt="Preview foto izin" 
+                                    className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                                />
+                                <button
+                                    onClick={handleRemoveIzinPhoto}
+                                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full shadow-lg transition-colors"
+                                >
+                                    <X size={16} />
+                                </button>
+                                <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs">
+                                    Foto Pendukung
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Hidden File Input */}
+                        <input
+                            ref={izinFileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleIzinPhotoUpload}
+                            className="hidden"
+                        />
+                        
+                        <p className="text-xs text-gray-500 mt-2">
+                            Upload foto seperti surat dokter, surat sakit, atau dokumen pendukung lainnya
+                        </p>
+                    </div>
                     
                     <div className="flex gap-4 mt-6">
                         <button 
@@ -657,7 +810,7 @@ const AbsensiPage = () => {
                         </button>
                         <button 
                             onClick={handleSubmitIzin}
-                            disabled={izinSubmitting || !izinDate}
+                            disabled={izinSubmitting || !izinDate || !izinKeterangan.trim()}
                             className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
                         >
                             {izinSubmitting ? (

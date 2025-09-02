@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+
 import { 
     FileText, 
     Check, 
@@ -24,7 +25,16 @@ import { getIzinHistory, updateIzinStatus } from '../../api/izin';
 // Komponen Modal untuk detail izin
 function DetailModal({ open, onClose, izin }) {
     if (!open || !izin) return null;
-    
+
+    console.log("Izin detail:", izin);
+
+    // 2. Gunakan kode yang sama seperti sebelumnya untuk membuat URL
+    const fotoUrl = izin.foto_izin_path
+    //? `http://127.0.0.1:5000/static/uploads/${izin.foto_izin_path}`: null;
+    ? `https://jam.restapi.teknomobileindonesia.my.id/static/uploads/${izin.foto_izin_path}`: null;
+
+    // 3. Tampilkan hasilnya (misalnya di console)
+    console.log(fotoUrl);
     return (
         <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl shadow-lg w-full max-w-lg relative p-6">
@@ -56,6 +66,20 @@ function DetailModal({ open, onClose, izin }) {
                         <div className="bg-gray-50 rounded-lg p-3 min-h-[80px]">
                             <p className="text-gray-800">{izin.keterangan || 'Tidak ada keterangan'}</p>
                         </div>
+                    </div>
+
+                    {/* Tambahan Foto Izin */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Foto Izin</label>
+                        {fotoUrl ? (
+                            <img 
+                                src={fotoUrl} 
+                                alt="Foto Izin" 
+                                className="w-full h-64 object-contain rounded-lg border"
+                            />
+                        ) : (
+                            <p className="text-gray-500 italic">Tidak ada foto</p>
+                        )}
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
@@ -94,6 +118,7 @@ function DetailModal({ open, onClose, izin }) {
         </div>
     );
 }
+
 
 const PageIzin = () => {
     const [izinList, setIzinList] = useState([]);

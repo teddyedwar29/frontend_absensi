@@ -1,140 +1,149 @@
-// src/api/izin.js
+    // src/api/izin.js
 
-import API from './auth';
+    import API from './auth';
 
-// Helper function to get today's date string in YYYY-MM-DD format
-const getTodayDateString = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
+    // Helper function to get today's date string in YYYY-MM-DD format
+    const getTodayDateString = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
 
-// Fungsi untuk mengambil semua data izin user
-export const getIzinHistory = async () => {
-    try {
-        const response = await API.get('/izin');
-        const data = response.data || [];
-        return { success: true, data };
-    } catch (err) {
-        console.error("Error saat mengambil riwayat izin:", err);
-        return { 
-            success: false, 
-            message: err.response?.data?.msg || "Gagal memuat riwayat izin." 
-        };
-    }
-};
+    // Fungsi untuk mengambil semua data izin user
+    export const getIzinHistory = async () => {
+        try {
+            const response = await API.get('/izin');
+            const data = response.data || [];
+            return { success: true, data };
+        } catch (err) {
+            console.error("Error saat mengambil riwayat izin:", err);
+            return { 
+                success: false, 
+                message: err.response?.data?.msg || "Gagal memuat riwayat izin." 
+            };
+        }
+    };
 
-// Fungsi untuk mengajukan izin baru
-export const createIzin = async (tanggalIzin, keterangan) => {
-    try {
-        const payload = {
-            tanggal_izin: tanggalIzin,
-            keterangan: keterangan || null
-        };
+    // Fungsi untuk mengajukan izin baru (dengan foto)
+    export const createIzin = async (tanggalIzin, keterangan, foto) => {
+        try {
+            const formData = new FormData();
+            formData.append("tanggal_izin", tanggalIzin);
+            formData.append("keterangan", keterangan || "");
+            
+            if (foto) {
+                formData.append("foto_izin", foto); // ⬅️ pastikan field sama dengan backend
+            }
 
-        const response = await API.post('/izin', payload);
-        return { 
-            success: true, 
-            data: response.data,
-            message: "Izin berhasil diajukan!"
-        };
-    } catch (error) {
-        console.error("Gagal mengajukan izin:", error.response?.data);
-        
-        const errorMessage = error.response?.data?.msg || error.response?.data?.message;
-        
-        return { 
-            success: false, 
-            message: errorMessage || "Gagal mengajukan izin. Silakan coba lagi."
-        };
-    }
-};
+            const response = await API.post("/izin", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data"
+                }
+            });
 
-// Fungsi untuk cek apakah sudah mengajukan izin pada tanggal tertentu
-export const checkIzinExist = async (tanggal) => {
-    try {
-        const result = await getIzinHistory();
-        if (!result.success) return false;
-        
-        const existingIzin = result.data.find(izin => {
-            const izinDate = new Date(izin.tanggal_izin).toISOString().split('T')[0];
-            return izinDate === tanggal;
-        });
-        
-        return !!existingIzin;
-    } catch (error) {
-        console.error("Error checking izin existence:", error);
-        return false;
-    }
-};
+            return { 
+                success: true, 
+                data: response.data,
+                message: "Izin berhasil diajukan!"
+            };
+        } catch (error) {
+            console.error("Gagal mengajukan izin:", error.response?.data);
 
-// Fungsi untuk cek apakah sudah mengajukan izin hari ini
-export const checkTodayIzin = async () => {
-    const todayDateString = getTodayDateString();
-    return await checkIzinExist(todayDateString);
-};
+            const errorMessage = error.response?.data?.msg || error.response?.data?.message;
 
-// Fungsi untuk mendapatkan status izin hari ini
-export const getTodayIzinStatus = async () => {
-    try {
-        const result = await getIzinHistory();
-        if (!result.success) {
+            return { 
+                success: false, 
+                message: errorMessage || "Gagal mengajukan izin. Silakan coba lagi."
+            };
+        }
+    };
+
+
+    // Fungsi untuk cek apakah sudah mengajukan izin pada tanggal tertentu
+    export const checkIzinExist = async (tanggal) => {
+        try {
+            const result = await getIzinHistory();
+            if (!result.success) return false;
+            
+            const existingIzin = result.data.find(izin => {
+                const izinDate = new Date(izin.tanggal_izin).toISOString().split('T')[0];
+                return izinDate === tanggal;
+            });
+            
+            return !!existingIzin;
+        } catch (error) {
+            console.error("Error checking izin existence:", error);
+            return false;
+        }
+    };
+
+    // Fungsi untuk cek apakah sudah mengajukan izin hari ini
+    export const checkTodayIzin = async () => {
+        const todayDateString = getTodayDateString();
+        return await checkIzinExist(todayDateString);
+    };
+
+    // Fungsi untuk mendapatkan status izin hari ini
+    export const getTodayIzinStatus = async () => {
+        try {
+            const result = await getIzinHistory();
+            if (!result.success) {
+                return {
+                    success: false,
+                    message: result.message
+                };
+            }
+            
+            const todayDateString = getTodayDateString();
+            const todayIzin = result.data.find(izin => {
+                const izinDate = new Date(izin.tanggal_izin).toISOString().split('T')[0];
+                return izinDate === todayDateString;
+            });
+            
+            if (todayIzin) {
+                return {
+                    success: true,
+                    data: {
+                        status_izin: todayIzin.status_izin,
+                        keterangan: todayIzin.keterangan,
+                        tanggal_izin: todayIzin.tanggal_izin
+                    }
+                };
+            } else {
+                return {
+                    success: true,
+                    data: {
+                        status_izin: 'Belum Ada',
+                        keterangan: null,
+                        tanggal_izin: null
+                    }
+                };
+            }
+        } catch (error) {
+            console.error("Error getting today izin status:", error);
             return {
                 success: false,
-                message: result.message
+                message: "Gagal memuat status izin hari ini"
             };
         }
-        
-        const todayDateString = getTodayDateString();
-        const todayIzin = result.data.find(izin => {
-            const izinDate = new Date(izin.tanggal_izin).toISOString().split('T')[0];
-            return izinDate === todayDateString;
-        });
-        
-        if (todayIzin) {
-            return {
-                success: true,
-                data: {
-                    status_izin: todayIzin.status_izin,
-                    keterangan: todayIzin.keterangan,
-                    tanggal_izin: todayIzin.tanggal_izin
-                }
-            };
-        } else {
-            return {
-                success: true,
-                data: {
-                    status_izin: 'Belum Ada',
-                    keterangan: null,
-                    tanggal_izin: null
-                }
-            };
-        }
-    } catch (error) {
-        console.error("Error getting today izin status:", error);
-        return {
-            success: false,
-            message: "Gagal memuat status izin hari ini"
-        };
-    }
-};
+    };
 
-export const updateIzinStatus = async (izinId, newStatus) => {
-    try {
-        const payload = { status_izin: newStatus };
-        const response = await API.put(`/izin/${izinId}/${newStatus}`, payload);
-        return { 
-            success: true, 
-            data: response.data,
-            message: "Status izin berhasil diperbarui!"
-        };
-    } catch (error) {
-        console.error("Gagal memperbarui status izin:", error.response?.data);
-        return { 
-            success: false, 
-            message: error.response?.data?.msg || "Gagal memperbarui status izin." 
-        };
+    export const updateIzinStatus = async (izinId, newStatus) => {
+        try {
+            const payload = { status_izin: newStatus };
+            const response = await API.put(`/izin/${izinId}/${newStatus}`, payload);
+            return { 
+                success: true, 
+                data: response.data,
+                message: "Status izin berhasil diperbarui!"
+            };
+        } catch (error) {
+            console.error("Gagal memperbarui status izin:", error.response?.data);
+            return { 
+                success: false, 
+                message: error.response?.data?.msg || "Gagal memperbarui status izin." 
+            };
+        }
     }
-}
