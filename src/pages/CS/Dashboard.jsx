@@ -39,6 +39,14 @@ const CSDashboard = () => {
   // Fetch komplains on component mount
   useEffect(() => {
     loadKomplains();
+
+    const interval = setInterval(() => {
+    console.log("🔄 Auto refresh data...");
+    loadKomplains(); // refresh list setiap 5 detik
+  }, 300000);
+
+  return () => clearInterval(interval);
+
   }, []);
 
   const loadKomplains = async () => {
@@ -236,6 +244,18 @@ const handleDelete = async (id) => {
       minute: "2-digit",
     });
   };
+
+const formatPhoneNumber = (no) => {
+  if (!no) return "";
+  let clean = no.replace(/\D/g, ""); // hapus karakter non-digit
+  if (clean.startsWith("0")) {
+    clean = "62" + clean.slice(1); // ganti 0 jadi 62
+  }
+  return clean;
+};
+
+
+
   return (
    <div className="flex h-screen bg-gray-50">
     {/* Notification */}
@@ -664,7 +684,7 @@ const handleDelete = async (id) => {
                           <span className="text-sm font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded">#{komplain.id}</span>
                           <span
                             className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                              komplain.status_komplain?.toLowerCase().includes('selesai')
+                              komplain.status_komplain?.toLowerCase() === 'selesai'
                                 ? 'bg-green-100 text-green-800 border border-green-200'
                                 : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
                             }`}
@@ -701,15 +721,35 @@ const handleDelete = async (id) => {
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="space-y-4">
                           <div className="flex items-center text-sm">
-                            <Phone className="mr-3 text-purple-500" size={16} />
-                            <span className="font-medium text-gray-700 w-24">Konsumen:</span>
-                            <span className="text-gray-900 font-mono bg-purple-50 px-2 py-1 rounded border border-purple-200">{komplain.nomor_konsumen}</span>
-                          </div>
+                              <Phone className="mr-3 text-purple-500" size={16} />
+                              <span className="font-medium text-gray-700 w-24">Konsumen:</span>
+                              <span className="text-gray-900 font-mono bg-purple-50 px-2 py-1 rounded border border-purple-200">
+                                {komplain.nomor_konsumen}
+                              </span>
+                              <a
+                                href={`https://web.whatsapp.com/send?phone=${formatPhoneNumber(komplain.nomor_konsumen)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ml-2 text-green-600 hover:text-green-800 font-semibold"
+                              >
+                                Chat WA
+                              </a>
+                            </div>
                           
                           <div className="flex items-center text-sm">
                             <Phone className="mr-3 text-green-500" size={16} />
                             <span className="font-medium text-gray-700 w-24">Tujuan:</span>
-                            <span className="text-gray-900 font-mono bg-green-50 px-2 py-1 rounded border border-green-200">{komplain.nomor_tujuan}</span>
+                            <span className="text-gray-900 font-mono bg-green-50 px-2 py-1 rounded border border-green-200">
+                              {komplain.nomor_tujuan}
+                            </span>
+                            <a
+                              href={`https://web.whatsapp.com/send?phone=${formatPhoneNumber(komplain.nomor_tujuan)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ml-2 text-green-600 hover:text-green-800 font-semibold"
+                            >
+                              Chat WA
+                            </a>
                           </div>
                           
                           <div className="flex items-center text-sm">

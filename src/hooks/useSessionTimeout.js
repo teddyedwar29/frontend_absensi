@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { isAuthenticated, logout } from '../api/auth.js';
+import { isAuthenticated, logout ,getUserRole  } from '../api/auth.js';
 import Swal from 'sweetalert2';
 
 // Durasi timeout sesi dalam menit
@@ -45,6 +45,13 @@ export const useSessionTimeout = () => {
 
   useEffect(() => {
     if (!isUserLoggedIn || isLoggingOut || listenersSetup.current) return;
+
+    
+    const role = getUserRole(); 
+    if (role === "cs") {
+      // 🚨 kalau role CS, jangan setup auto logout
+      return;
+    }
 
     const events = ['mousedown', 'keydown', 'touchstart', 'scroll'];
     const addListeners = () => {
