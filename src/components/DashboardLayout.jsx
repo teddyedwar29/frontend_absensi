@@ -78,7 +78,9 @@ const DashboardLayout = ({ children }) => {
     { to: '/admin/PageIzin', label: 'Pengajuan Izin', icon: Users },
     { to: '#', label: 'Lokasi Kantor', icon: MapPin, soon: true },
     { to: '#', label: 'Laporan', icon: FileText, soon: true }
-  ] : [
+  ] : userRole === 'cs' ? [
+  { to: '/cs/dashboard', label: 'Dashboard Komplain', icon: FileText }
+] : [
     { to: '/sales/dashboard', label: 'Dashboard', icon: TrendingUp },
     { to: '/sales/kunjungan', label: 'Kunjungan', icon: MapPin }
   ];

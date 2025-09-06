@@ -287,8 +287,6 @@ const AbsensiPage = () => {
 
   const formData = new FormData();
   formData.append("foto_izin", file);
-        // Frontend
-console.log("Upload foto untuk izin ID:", id, "File:", file);
 
   try {
     const response = await API.put(`/izin-photo-update/${id}`, formData, {
@@ -297,7 +295,7 @@ console.log("Upload foto untuk izin ID:", id, "File:", file);
 
     alert(response.data.msg || "Foto berhasil diupdate!");
     // // Refresh riwayat biar update
-    // fetchIzinHistory();
+     //fetchInitialData();
   } catch (error) {
     console.error("Gagal upload foto izin:", error);
     alert(error.response?.data?.msg || "Gagal upload foto izin");

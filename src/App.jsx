@@ -17,11 +17,13 @@ const KunjunganPage = lazy(() => import('./pages/Sales/Kunjungan.jsx'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage.jsx'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage.jsx'));
+const CsDashboard = lazy(() => import('./pages/CS/Dashboard.jsx'));
 
 const DashboardDispatcher = () => {
   const role = getUserRole();
   if (role === 'admin') return <Navigate to="/admin/dashboard" />;
   if (role === 'sales') return <Navigate to="/sales/dashboard" />;
+  if (role === 'cs') return <Navigate to="/cs/dashboard" />;
   return <Navigate to="/" />; // Fallback jika role tidak terdefinisi
 };
 
@@ -58,6 +60,9 @@ function App() {
           {/* Rute khusus Sales */}
           <Route path="/sales/dashboard" element={<ProtectedRoute requiredRole="sales"><DashboardSales /></ProtectedRoute>} />
           <Route path="/sales/kunjungan" element={<ProtectedRoute requiredRole="sales"><KunjunganPage /></ProtectedRoute>} />
+          
+          {/*rute khusus CS */}
+          <Route path="/cs/dashboard" element={<ProtectedRoute requiredRole="cs"><CsDashboard /></ProtectedRoute>} />
           
           {/* Rute Not Found */}
           <Route path="*" element={<NotFoundPage />} />
