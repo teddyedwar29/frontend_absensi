@@ -8,7 +8,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import API from '../../api/auth';
-import RoutingMachine from '../../components/RoutingMachine'; // Komponen untuk menampilkan rute
+import { convertToWIB } from "../../untils/date";
 
 // --- KODE HELPER & PERBAIKAN ---
 
@@ -378,7 +378,7 @@ function Modal({ open, onClose, children }) {
                                                                               <div className="flex-grow">
                                                                               <p className="font-bold text-base">{pointIndex + 1}. {point.nama_outlet}</p>
                                                                               <p className="text-sm">sales: <span className="font-medium">{name}</span></p>
-                                                                              <p className="text-sm">Waktu: <span className="font-medium">{point.waktu_kunjungan}</span></p>
+                                                                              <p className="text-sm">Waktu: <span className="font-medium">{convertToWIB(point.waktu_kunjungan)}</span></p>
                                                                               <p className="text-sm">Kegiatan: <span className="font-medium capitalize">{point.kegiatan}</span></p>
                                                                           </div>
                                                                           </div>

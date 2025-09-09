@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { Menu, X, LogOut, TrendingUp, Users, MapPin, FileText, Download, ChevronDown, ChevronRight, Calendar } from 'lucide-react';
+import { Menu, X, LogOut, TrendingUp, Users, MapPin, FileText, Download, ChevronDown, ChevronRight, Calendar, Store } from 'lucide-react';
 import { logout } from '../api/auth';
 
 const DashboardLayout = ({ children }) => {
@@ -76,6 +76,7 @@ const DashboardLayout = ({ children }) => {
     { to: '/admin/dashboard', label: 'Dashboard', icon: TrendingUp },
     { to: '/admin/teams', label: 'Tim Sales', icon: Users },
     { to: '/admin/PageIzin', label: 'Pengajuan Izin', icon: Users },
+    { to: '/admin/Outlet', label: 'Outlet Terdaftar', icon: Store },
     { to: '#', label: 'Lokasi Kantor', icon: MapPin, soon: true },
     { to: '#', label: 'Laporan', icon: FileText, soon: true }
   ] : userRole === 'cs' ? [

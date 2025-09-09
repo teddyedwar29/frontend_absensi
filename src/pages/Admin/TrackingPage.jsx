@@ -9,6 +9,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import API from '../../api/auth';
 import { ArrowLeft, Clock, Building, Activity, AlertTriangle, BanknoteArrowUp, Percent, Banknote  } from 'lucide-react';
 import RoutingMachine from '../../components/RoutingMachine';
+import { convertToWIB } from "../../untils/date";
 
 // Fix untuk ikon marker yang tidak muncul di Vite
 delete L.Icon.Default.prototype._getIconUrl;
@@ -140,7 +141,7 @@ const TrackingPage = () => {
                                         )}
                                         <div className="flex-grow">
                                             <p className="font-bold text-base">{index + 1}. {point.nama_outlet}</p>
-                                            <p className="text-sm">Waktu: <span className="font-medium">{point.waktu_kunjungan}</span></p>
+                                            <p className="text-sm">Waktu: <span className="font-medium">{convertToWIB(point.waktu_kunjungan)}</span></p>
                                             <p className="text-sm">Kegiatan: <span className="font-medium capitalize">{point.kegiatan}</span></p>
                                         </div>
                                     </div>
@@ -171,7 +172,7 @@ const TrackingPage = () => {
                                 <div className="flex-grow">
                                     <p className="font-semibold text-gray-900">{point.nama_outlet}</p>
                                     <div className="grid grid-cols-4 gap-x-4 gap-y-1 text-sm text-gray-600 mt-1">
-                                        <span className="flex items-center gap-1.5"><Clock size={14} />{point.waktu_kunjungan}</span>
+                                        <span className="flex items-center gap-1.5"><Clock size={14} />{convertToWIB(point.waktu_kunjungan)}</span>
                                         <span className="flex items-center gap-1.5 capitalize"><Building size={14} />{point.kegiatan}</span>
                                         <span className="flex items-center gap-1.5"><Activity size={14} />Kompetitor: {point.kompetitor || '-'}</span>
                                         <span className="flex items-center gap-1.5"><AlertTriangle size={14} />Issue: {point.issue || '-'}</span>

@@ -13,6 +13,7 @@ const DashboardSales = lazy(() => import('./pages/Sales/Dashboard.jsx'));
 const PageIzin = lazy(() => import('./pages/Admin/PageIzin.jsx'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage.jsx'));
 const TrackingPage = lazy(() => import('./pages/Admin/TrackingPage.jsx'));
+const Outletlist = lazy(() => import('./pages/Admin/Outletlist.jsx'));
 const KunjunganPage = lazy(() => import('./pages/Sales/Kunjungan.jsx'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage.jsx'));
@@ -56,6 +57,7 @@ function App() {
           <Route path="/admin/dashboard" element={<ProtectedRoute requiredRole="admin"><DashboardAdmin /></ProtectedRoute>} />
           <Route path="/admin/teams" element={<ProtectedRoute requiredRole="admin"><AdminTeamPage /></ProtectedRoute>} />
           <Route path="/admin/PageIzin" element={<ProtectedRoute requiredRole="admin"><PageIzin /></ProtectedRoute>} />
+          <Route path="/admin/Outlet" element={<ProtectedRoute requiredRole="admin"><Outletlist /></ProtectedRoute>} />
           
           {/* Rute khusus Sales */}
           <Route path="/sales/dashboard" element={<ProtectedRoute requiredRole="sales"><DashboardSales /></ProtectedRoute>} />
